@@ -36,11 +36,13 @@ Function CreateLabyrinth () {
     For($i=0;$i -lt $sizex;$i++) {
         $lab += ,(@()) 
         For ($o=0;$o -lt $sizey;$o++) {
-            $lab[$i] += Get-Random -Minimum 0 -Maximum 2
+            $lab[$i] += Get-Random -Minimum 0 -Maximum 3
         }
     }
     $brushw = New-Object Drawing.SolidBrush White
     $brushb = New-Object Drawing.SolidBrush Black
+    $brushf = New-Object Drawing.SolidBrush Firebrick
+    
     $pen = New-object Drawing.pen Black
     $graphics = $FrmLabyrinthian.CreateGraphics()
     #Test for drawing
@@ -50,10 +52,17 @@ Function CreateLabyrinth () {
     $ScaleY= ($Global:FrmSizeY-($offsety*2))/$sizey
     For($y=0;$y -lt $sizey;$y++) { 
         For($x=0;$x -lt $sizex;$x++) {
-            If($lab[$x][$y] -eq 0) {
-                $graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,$ScaleX,$scaleY)
-            } Else {
-                $graphics.FillRectangle($brushb,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,$ScaleX,$scaleY)
+            Switch($lab[$x][$y]) {
+                0 {
+                    $graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,$ScaleX,$scaleY)
+                }
+                1 {
+                    $graphics.FillRectangle($brushb,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,$ScaleX,$scaleY)
+                }
+                default {
+                    $graphics.FillRectangle($brushf,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,$ScaleX,$scaleY)
+                }
+                    
             }
         }
 
