@@ -3,10 +3,12 @@ Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName PresentationCore,PresentationFramework
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
+$Global:FrmSizeX =300
+$Global:FrmSizeY =500
 
 Clear-Host
 $FrmLabyrinthian                            = New-Object system.Windows.Forms.Form
-$FrmLabyrinthian.ClientSize                 = '300,500'
+$FrmLabyrinthian.ClientSize                 = "$Global:FrmSizeX,$Global:FrmSizeY"
 $FrmLabyrinthian.text                       = "Labyrinth"
 $FrmLabyrinthian.TopMost                    = $true
 $FrmLabyrinthian.BackColor                  = "#FFFFFF"
@@ -27,16 +29,36 @@ Function CreateLabyrinth () {
     #Draw labyrinth
 
     #Draw stuff prep
-    $lab =@(0;1;1;1;0;0;0;1)
-    $brush = New-Object Drawing.SolidBrush Black
+    [System.Collections.ArrayList]$lab =@()
+    $sizex = 5
+    $sizey = 10
+    $Size =$sizex * $sizey
+    For($i=0;$i -lt $sizex;$i++) {
+        $lab += ,(@()) 
+        For ($o=0;$o -lt $sizey;$o++) {
+            $lab[$i] += Get-Random -Minimum 0 -Maximum 2
+        }
+    }
+    $brushw = New-Object Drawing.SolidBrush White
+    $brushb = New-Object Drawing.SolidBrush Black
     $pen = New-object Drawing.pen Black
     $graphics = $FrmLabyrinthian.CreateGraphics()
     #Test for drawing
-    For($x=0;$x -le 100;$x = $x+2) {
-        $graphics.FillRectangle($brush,$x,10,1,1)
-    }
-}   
+    $offsetx = 10
+    $offsety=10
+    $ScaleX = ($Global:FrmSizeX-($offsetx*2))/$sizex
+    $ScaleY= ($Global:FrmSizeY-($offsety*2))/$sizey
+    For($y=0;$y -lt $sizey;$y++) { 
+        For($x=0;$x -lt $sizex;$x++) {
+            If($lab[$x][$y] -eq 0) {
+                $graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,$ScaleX,$scaleY)
+            } Else {
+                $graphics.FillRectangle($brushb,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,$ScaleX,$scaleY)
+            }
+        }
 
+    }   
+}
 
 $BtnCreateLabyrinth.Add_Click({ CreateLabyrinth })
 
