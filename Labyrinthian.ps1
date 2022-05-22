@@ -5,8 +5,8 @@ Add-Type -AssemblyName PresentationCore,PresentationFramework
 
 $Global:FrmSizeX =500
 $Global:FrmSizeY =500
-$global:SizeX = 100
-$global:SizeY= 50
+$global:SizeX = 50
+$global:SizeY= 25
 
 Clear-Host
 $FrmLabyrinthian                            = New-Object system.Windows.Forms.Form
@@ -59,7 +59,6 @@ $sldHeight.TickStyle = 0
 $sldHeight.Orientation = 0
 $sldHeight.BackColor ='#888888'
 
-
 $sldHeightNum = New-Object System.Windows.Forms.NumericUpDown
 $sldHeightNum.width = 45
 $sldHeightNum.Height = 25
@@ -79,16 +78,18 @@ Function CreateLabyrinth () {
     #Fill labyrinth matrix array
     ClearLabyrinth
     #Create Labyrinth
-    $global:labyrinth[0][0] = 16 #start
-    $global:labyrinth[$global:SizeX-1][ $global:SizeY-1] = 32 #finish
-    $x = 0
-    $y = 0
+    $x = Get-Random -Minimum 0 -Maximum ($global:SizeX-1)
+    $y = Get-Random -Minimum 0 -Maximum ($global:SizeY-1)
+    $global:labyrinth[$x][$y] = 16 #start
     $pointer=0
     $progress=0
-    $progressmax=$global:SizeX*$global:SizeY
+    $pointermax=0
     $prgcalc.Minimum=0
-    $prgCalc.Maximum=$progressmax
+    $prgCalc.Maximum=$global:SizeX*$global:SizeY
     [System.Collections.ArrayList]$moved = @()
+    [System.Collections.ArrayList]$endpoints = @()
+    DrawExplorer -x $x -y $y
+    #DrawExplorer -x ($global:SizeX-1) -y ($global:SizeY-1)
     While($pointer -ge 0) {
         [System.Collections.ArrayList]$posDir = @()
         If ($y -gt 0) {
@@ -139,25 +140,26 @@ Function CreateLabyrinth () {
             }
             $global:labyrinth[$x][$y] = $value
             #Write-host "Step $pointer = Moved to $x $y"
+            $prgCalc.Value = $progress
+            DrawExplorer -x $x -y $y
             $progress++
+        } ElseIf ($pointer -gt $pointermax) {
+           $pointermax=$pointer+1
+           $endpoints.Add(@($x,$y))
         } Else {
             $pointer--
             $x = $moved[$pointer][0]
             $y = $moved[$pointer][1]
             #Write-host "Step $pointer = Niewe scan op punt $x $y"
         }
-        If ($pointer -gt $progressmax) {
-            $progressmax=$pointer+1
-            $prgCalc.Maximum=$progressmax
-            #DrawLabyrinth
-        }
-        $prgCalc.Value = $progress
-        $FrmLabyrinthian.update()
     }
-    $global:labyrinth[ $global:SizeX-1][ $global:SizeY-2] +=2 
+    $endpoint=$endpoints[(Get-Random -Minimum 0 -Maximum $endpoints.Count)]
+    $global:labyrinth[$endpoint[0]][$endpoint[1]] = 32 #finish
+    DrawExplorer -x ($endpoint[0]) -y ($endpoint[1])
     #Draw labyrinth
-    Write-host $progress $progressmax
-    DrawLabyrinth
+    Write-host $progress $pointermax
+    #ClearLabyrinth
+    #DrawLabyrinth
 }
 Function InitLabyrinth(){
     #Draw stuff prep
@@ -170,65 +172,76 @@ Function InitLabyrinth(){
             $global:labyrinth[$i] += 0 #Black Block
         }
     }
+    $global:Graphics = $FrmLabyrinthian.CreateGraphics()
+
     $prgcalc.width = $FrmLabyrinthian.Width-460
 }
 Function ClearLabyrinth () {
     $FrmLabyrinthian.Refresh()
     $brushb = New-Object Drawing.SolidBrush Gray
-    $graphics = $FrmLabyrinthian.CreateGraphics()
-    $graphics.FillRectangle($brushb,0,0,$FrmLabyrinthian.Width,$FrmLabyrinthian.Height)
+    $global:Graphics = $FrmLabyrinthian.CreateGraphics()
+    $global:Graphics.FillRectangle($brushb,0,0,$FrmLabyrinthian.Width,$FrmLabyrinthian.Height)
     #$FrmLabyrinthian.Update()
 }
-Function DrawLabyrinth(){    
+Function DrawExplorer {
+    Param (
+        $x,
+        $y,
+        [switch]$marker = $false
+    )
+
     $brushw = New-Object Drawing.SolidBrush White
     $brushb = New-Object Drawing.SolidBrush Black
     $brushg = New-Object Drawing.SolidBrush Green
     $brushf = New-Object Drawing.SolidBrush Firebrick
-    
-    #$pen = New-object Drawing.pen Black
-    $graphics = $FrmLabyrinthian.CreateGraphics()
-    #Test for drawing
+    $brushe = New-Object Drawing.SolidBrush Blue
+
     $offsetx = 20
     $offsety = 50
-    $Global:FrmSizeX = $FrmLabyrinthian.Width
-    $Global:FrmSizeY = $FrmLabyrinthian.Height - 25
-    $ScaleX = (($Global:FrmSizeX-($offsetx*2))/ $global:SizeX)
-    $ScaleY= (($Global:FrmSizeY-($offsety*2))/ $global:SizeY)
+    $ScaleX = (($FrmLabyrinthian.Width-($offsetx*2))/ $global:SizeX)
+    $ScaleY= ((($FrmLabyrinthian.Height - 25)-($offsety*2))/ $global:SizeY)
     $RoomSizeX = $ScaleX * 0.75
     $RoomsizeY = $Scaley * 0.75
-    
+    If($marker) {
+        $global:Graphics.FillRectangle($brushe,($x*$scalex)+$offsetx,($y*$scaleY+0.25)+$offsety,($RoomSizeX),($RoomsizeY))
+     
+    } Else {
+        $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+        Switch($global:labyrinth[$x][$y]) {
+            0 {
+                $global:Graphics.FillRectangle($brushb,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,$ScaleX,$scaleY)
+            }
+            {(1 -band $_) -eq 1} {
+                $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,(($y-0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+            }
+            {(2 -band $_) -eq 2} {
+                $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+
+            }
+            {(4 -band $_) -eq 4} {
+                $global:Graphics.FillRectangle($brushw,(($x-0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+            }
+            {(8 -band $_) -eq 8} {
+                $global:Graphics.FillRectangle($brushw,(($x+0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+
+            }
+            {(16 -band $_) -eq 16} {
+                $global:Graphics.FillRectangle($brushg,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+            }
+            {(32 -band $_) -eq 32} {
+                $global:Graphics.FillRectangle($brushf,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+            }
+
+        }
+
+    }
+}
+
+Function DrawLabyrinth {    
+    Param ()
     For($y=0;$y -lt  $global:SizeY;$y++) { 
         For($x=0;$x -lt  $global:SizeX;$x++) {
-            Switch($global:labyrinth[$x][$y]) {
-                0 {
-                    $graphics.FillRectangle($brushb,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,$ScaleX,$scaleY)
-                }
-                {(1 -band $_) -eq 1} {
-                    $graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,(($y-0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-                {(2 -band $_) -eq 2} {
-                    $graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-
-                }
-                {(4 -band $_) -eq 4} {
-                    $graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $graphics.FillRectangle($brushw,(($x-0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-                {(8 -band $_) -eq 8} {
-                    $graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $graphics.FillRectangle($brushw,(($x+0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-
-                }
-                {(16 -band $_) -eq 16} {
-                    $graphics.FillRectangle($brushg,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-                {(32 -band $_) -eq 32} {
-                    $graphics.FillRectangle($brushf,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-                    
-            }
+            DrawExplorer -x $x -y $y
         }
     }   
     $FrmLabyrinthian.Update()
@@ -244,7 +257,7 @@ function ChangeSizeY () {
 }
 function ChangeSizeXNum () {
     $sldWidth.Value = $sldWidthNum.Value 
-    $global:SizeY = $sldWidth.Value
+    $global:SizeX = $sldWidth.Value
 }
 function ChangeSizeYNum () {
     $sldHeight.Value = $sldHeightNum.Value 
