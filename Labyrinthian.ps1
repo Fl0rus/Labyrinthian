@@ -246,6 +246,9 @@ Function DrawExplorer {
             {(32 -band $_) -eq 32} {
                 $global:Graphics.FillRectangle($brushf,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
             }
+            {(64 -band $_) -eq 64} {
+                $global:Graphics.FillRectangle($brushb,($x*$scalex)+$offsetx,($y*$scaleY+0.25)+$offsety,($RoomSizeX),($RoomsizeY))
+            }
 
         }
 
