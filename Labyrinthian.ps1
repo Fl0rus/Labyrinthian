@@ -308,9 +308,9 @@ Function SolveLabyrinth {
         $Moves++
         If ($numofposdir -ne 0) {
             #Random direction
-            $movechoice = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
+            #$movechoice = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
             #Directed direction
-            #$movechoice = $posDir[0]
+            $movechoice = $posDir[0]
             $x = $movechoice[0]
             $y = $movechoice[1]
             $global:labyrinth[$x][$y]+=64
