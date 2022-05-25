@@ -87,10 +87,10 @@ Function CreateLabyrinth () {
     #Fill labyrinth matrix array
     ClearLabyrinth
     #Create Labyrinth
-    $x = Get-Random -Minimum 0 -Maximum ($global:SizeX-1)
-    $y = Get-Random -Minimum 0 -Maximum ($global:SizeY-1)
+    $x = Get-Random -Minimum 1 -Maximum ($global:SizeX-1)
+    $y = Get-Random -Minimum 1 -Maximum ($global:SizeY-1)
     $Global:Start=@($x,$y)
-    $global:labyrinth[$x][$y] = 16 #start
+    $global:labyrinth[$x][$y] = 256 #start
     $pointer=0
     $progress=0
     $pointermax=0
@@ -164,7 +164,7 @@ Function CreateLabyrinth () {
     }
     $BtnSolveLabyrinth.Enabled = $true
     $endpoint=$endpoints[(Get-Random -Minimum 0 -Maximum $endpoints.Count)]
-    $global:labyrinth[$endpoint[0]][$endpoint[1]] = 32 #finish
+    $global:labyrinth[$endpoint[0]][$endpoint[1]] = 512 #finish
     $Global:Finish=@($endpoint[0],$endpoint[1])
     DrawExplorer -x ($endpoint[0]) -y ($endpoint[1])
     #Draw labyrinth
@@ -219,40 +219,59 @@ Function DrawExplorer {
     } ElseIf($marker -eq 'Normal') {
         $global:Graphics.FillRectangle($brushelb,($x*$scalex)+$offsetx,($y*$scaleY+0.25)+$offsety,($RoomSizeX),($RoomsizeY))
     } ElseIf($marker -eq 'Light') {
-        $global:Graphics.FillRectangle($brushelc,($x*$scalex)+$offsetx,($y*$scaleY+0.25)+$offsety,($RoomSizeX),($RoomsizeY))
-    } Else {
-        $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+        $global:Graphics.FillRectangle($brushw,(($x+0.25)*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
+    }Else{
         Switch($global:labyrinth[$x][$y]) {
             0 {
                 $global:Graphics.FillRectangle($brushb,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,$ScaleX,$scaleY)
             }
             {(1 -band $_) -eq 1} {
+                $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
                 $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,(($y-0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
             }
             {(2 -band $_) -eq 2} {
+                $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
                 $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-
             }
             {(4 -band $_) -eq 4} {
+                $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
                 $global:Graphics.FillRectangle($brushw,(($x-0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
             }
             {(8 -band $_) -eq 8} {
+                $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
                 $global:Graphics.FillRectangle($brushw,(($x+0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-
             }
-            {(16 -band $_) -eq 16} {
+        }
+        If ((($global:labyrinth[$x][$y] -band 240) -ne 240) -or (($global:labyrinth[$x][$y] -band 240) -eq 0)) {
+            Switch($global:labyrinth[$x][$y]) {
+                {(16 -band $_) -eq 16} {
+                    $global:Graphics.FillRectangle($brushb,(($x+0.25)*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
+                    $global:Graphics.FillRectangle($brushelb,(($x+0.25)*$scalex)+$offsetx,((($y+0.25)-0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
+                }
+                {(32 -band $_) -eq 32} {
+                    $global:Graphics.FillRectangle($brushb,(($x+0.25)*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
+                    $global:Graphics.FillRectangle($brushelb,(($x+0.25)*$scalex)+$offsetx,((($y+0.25)+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
+                }
+                {(64 -band $_) -eq 64} {
+                    $global:Graphics.FillRectangle($brushb,(($x+0.25)*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
+                    $global:Graphics.FillRectangle($brushelb,(($x-0.25)*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
+                }
+                {(128 -band $_) -eq 128} {
+                    $global:Graphics.FillRectangle($brushb,(($x+0.25)*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
+                    $global:Graphics.FillRectangle($brushelb,((($x+0.25)+0.25)*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
+                }
+            }
+        }
+        Switch($global:labyrinth[$x][$y]) {
+            {(256 -band $_) -eq 256} {
                 $global:Graphics.FillRectangle($brushg,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
             }
-            {(32 -band $_) -eq 32} {
+            {(512 -band $_) -eq 512} {
                 $global:Graphics.FillRectangle($brushf,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
             }
-            {(64 -band $_) -eq 64} {
-                $global:Graphics.FillRectangle($brushb,($x*$scalex)+$offsetx,($y*$scaleY+0.25)+$offsety,($RoomSizeX),($RoomsizeY))
-            }
-
         }
-
     }
+    [System.Windows.Forms.Application]::DoEvents()
 }
 
 Function DrawLabyrinth {    
@@ -286,27 +305,28 @@ Function SolveLabyrinth {
     Param ()
     For($i=0;$i -lt  $global:SizeX;$i++) {
         For ($o=0;$o -lt  $global:SizeY;$o++) {
-            If((($global:labyrinth[$i][$o]) -band 64) -eq 64) {
-                $global:labyrinth[$i][$o]-= 64 #remove breadcrumbs
+            $breadcrumb = ($global:labyrinth[$i][$o]) -band 240
+            If($breadcrumb -ne 0) {
+                $global:labyrinth[$i][$o]-=$breadcrumb #remove breadcrumbs
             }
         }
     }
     ClearLabyrinth
     DrawLabyrinth
-    Write-host "$global:start $global:finish"
+    #Write-host "$global:start $global:finish"
     $x =$global:start[0]
     $y =$global:start[1]
     $Progress=1
     $progressmax=1
     $moves=0
     [System.Collections.ArrayList]$moved=@()
-    DrawExplorer -x $x -y $y -marker Bold
-    While (($global:labyrinth[$x][$y] -band 32) -ne 32) {
+    #DrawExplorer -x $x -y $y -marker Bold
+    While (($global:labyrinth[$x][$y] -band 512) -ne 512) {
         [System.Collections.ArrayList]$posDir = @()
-        If (($global:labyrinth[$x][$y] -band 2) -eq 2 -and (($global:labyrinth[$x][($y+1)] -band 64) -ne 64)) {$posdir.add(@($x,($y+1)))}
-        If (($global:labyrinth[$x][$y] -band 8) -eq 8 -and (($global:labyrinth[($x+1)][$y] -band 64) -ne 64)) {$posdir.add(@(($x+1),$y))}
-        If (($global:labyrinth[$x][$y] -band 4) -eq 4 -and (($global:labyrinth[($x-1)][$y] -band 64) -ne 64)) {$posdir.add(@(($x-1),$y))}
-        If (($global:labyrinth[$x][$y] -band 1) -eq 1 -and (($global:labyrinth[$x][($y-1)] -band 64) -ne 64)) {$posdir.add(@($x,($y-1)))}
+        If (($global:labyrinth[$x][$y] -band 1) -eq 1 -and (($global:labyrinth[$x][($y-1)] -band 240) -eq 0)) {$posdir.add(@($x,($y-1),'u'))}
+        If (($global:labyrinth[$x][$y] -band 2) -eq 2 -and (($global:labyrinth[$x][($y+1)] -band 240) -eq 0)) {$posdir.add(@($x,($y+1),'d'))}
+        If (($global:labyrinth[$x][$y] -band 4) -eq 4 -and (($global:labyrinth[($x-1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x-1),$y,'l'))}
+        If (($global:labyrinth[$x][$y] -band 8) -eq 8 -and (($global:labyrinth[($x+1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x+1),$y,'r'))}
         $numofposdir = $posdir.Count
         $Moves++
         If ($numofposdir -ne 0) {
@@ -314,27 +334,37 @@ Function SolveLabyrinth {
             #$movechoice = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
             #Directed direction
             $movechoice = $posDir[0]
+            $direction = $movechoice[2]
+            $global:labyrinth[$x][$y]-=($global:labyrinth[$x][$y] -band 240)
+            Switch ($direction){
+                'u' {$global:labyrinth[$x][$y]+=16}
+                'd' {$global:labyrinth[$x][$y]+=32}
+                'l' {$global:labyrinth[$x][$y]+=64}
+                'r' {$global:labyrinth[$x][$y]+=128}
+            }
+            DrawExplorer -x $x -y $y
             $x = $movechoice[0]
             $y = $movechoice[1]
-            $global:labyrinth[$x][$y]+=64
-            DrawExplorer -x $x -y $y -Marker Bold
+            $global:labyrinth[$x][$y]+=240
             $moved.Add(@($x,$y))
             $progress=$moved.count-1
             #Write-host "New route: " -NoNewline
         } ElseIf($progress -gt $progressmax) {
             $progressmax=$Progress+1
             #Write-host "Dead End: " -NoNewline
-            DrawExplorer -x $x -y $y -Marker Normal
+            #DrawExplorer -x $x -y $y -Marker Normal
         } Else {
             $Progress--
             $x = $moved[$progress][0]
             $y = $moved[$progress][1]
+            $global:labyrinth[$x][$y]-=($global:labyrinth[$x][$y] -band 240)
+            $global:labyrinth[$x][$y]+=240            
             #Write-host "Backtrack: " -NoNewline
-            DrawExplorer -x $x -y $y -marker Light
+            DrawExplorer -x $x -y $y
         }
         #Write-host "$x $y"
     }
-
+    #$global:labyrinth[$x][$y]-=64
     Write-Host "moves: $moves"
 }
 
