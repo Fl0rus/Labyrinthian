@@ -85,7 +85,7 @@ $prgcalc.Location = New-Object System.Drawing.Point(460,0)
 $FrmLabyrinthian.controls.AddRange(@($BtnCreateLabyrinth,$BtnSolveLabyrinth,$sldWidth,$sldwidthNum,$sldHeight,$sldHeightNum,$prgCalc))
 Function CreateLabyrinth () {
     #Fill labyrinth matrix array
-    ClearLabyrinth
+    #ClearLabyrinth
     #Create Labyrinth
     $x = Get-Random -Minimum 1 -Maximum ($global:SizeX-1)
     $y = Get-Random -Minimum 1 -Maximum ($global:SizeY-1)
@@ -183,7 +183,6 @@ Function InitLabyrinth(){
     }
 
     $global:Graphics = $FrmLabyrinthian.CreateGraphics()
-
     $prgcalc.width = $FrmLabyrinthian.Width-460
 }
 Function ClearLabyrinth () {
@@ -263,6 +262,9 @@ Function DrawExplorer {
             }
         }
         Switch($global:labyrinth[$x][$y]) {
+            {(240 -band $_) -eq 240} {
+                $global:Graphics.FillRectangle($brushelb,(($x+0.25)*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
+            }
             {(256 -band $_) -eq 256} {
                 $global:Graphics.FillRectangle($brushg,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
             }
@@ -284,23 +286,6 @@ Function DrawLabyrinth {
     $FrmLabyrinthian.Update()
 }
 
-function ChangeSizeX () {
-    $sldwidthNum.Value = $sldWidth.Value
-    $global:SizeX = $sldWidth.Value
-}
-function ChangeSizeY () {
-    $sldHeightNum.Value = $sldHeight.Value
-    $global:SizeY = $sldHeight.Value
-}
-function ChangeSizeXNum () {
-    $sldWidth.Value = $sldWidthNum.Value 
-    $global:SizeX = $sldWidth.Value
-}
-function ChangeSizeYNum () {
-    $sldHeight.Value = $sldHeightNum.Value 
-    $global:SizeY = $sldHeight.Value
-}
-
 Function SolveLabyrinth {
     Param ()
     For($i=0;$i -lt  $global:SizeX;$i++) {
@@ -311,14 +296,17 @@ Function SolveLabyrinth {
             }
         }
     }
-    ClearLabyrinth
-    DrawLabyrinth
+    #ClearLabyrinth
+    #DrawLabyrinth
     #Write-host "$global:start $global:finish"
     $x =$global:start[0]
     $y =$global:start[1]
     $Progress=1
     $progressmax=1
     $moves=0
+    $maxmoves=($global:SizeX*$global:SizeY)
+    $prgCalc.Value =$moves
+    $prgCalc.Maximum =$maxmoves
     [System.Collections.ArrayList]$moved=@()
     #DrawExplorer -x $x -y $y -marker Bold
     While (($global:labyrinth[$x][$y] -band 512) -ne 512) {
@@ -329,6 +317,7 @@ Function SolveLabyrinth {
         If (($global:labyrinth[$x][$y] -band 8) -eq 8 -and (($global:labyrinth[($x+1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x+1),$y,'r'))}
         $numofposdir = $posdir.Count
         $Moves++
+        $prgCalc.Value =$moves
         If ($numofposdir -ne 0) {
             #Random direction
             #$movechoice = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
@@ -355,6 +344,7 @@ Function SolveLabyrinth {
             #DrawExplorer -x $x -y $y -Marker Normal
         } Else {
             $Progress--
+            $Moves--
             $x = $moved[$progress][0]
             $y = $moved[$progress][1]
             $global:labyrinth[$x][$y]-=($global:labyrinth[$x][$y] -band 240)
@@ -365,17 +355,38 @@ Function SolveLabyrinth {
         #Write-host "$x $y"
     }
     #$global:labyrinth[$x][$y]-=64
+    $prgCalc.Value = $maxmoves
     Write-Host "moves: $moves"
 }
+function ChangeSizeX () {
+    $sldwidthNum.Value = $sldWidth.Value
+    $global:SizeX = $sldWidth.Value
+    $BtnSolveLabyrinth.Enabled=$false
+}
+function ChangeSizeY () {
+    $sldHeightNum.Value = $sldHeight.Value
+    $global:SizeY = $sldHeight.Value
+    $BtnSolveLabyrinth.Enabled=$false
+}
+function ChangeSizeXNum () {
+    $sldWidth.Value = $sldWidthNum.Value 
+    $global:SizeX = $sldWidth.Value
+    $BtnSolveLabyrinth.Enabled=$false
+}
+function ChangeSizeYNum () {
+    $sldHeight.Value = $sldHeightNum.Value 
+    $global:SizeY = $sldHeight.Value
+    $BtnSolveLabyrinth.Enabled=$false
+}
 
-$BtnCreateLabyrinth.Add_Click({ InitLabyrinth;CreateLabyrinth })
+$BtnCreateLabyrinth.Add_Click({ InitLabyrinth;ClearLabyrinth;CreateLabyrinth })
 $BtnSolveLabyrinth.Add_Click({ SolveLabyrinth })
 
 $sldWidth.Add_Scroll({ ChangeSizeX })
 $sldHeight.Add_Scroll({ ChangeSizeY })
 $sldwidthNum.Add_ValueChanged({ChangeSizeXNum})
 $sldHeightNum.Add_ValueChanged({ChangeSizeYNum})
-$FrmLabyrinthian.Add_ResizeEnd({ClearLabyrinth;DrawLabyrinth})
+$FrmLabyrinthian.Add_ResizeEnd({ClearLabyrinth;DrawLabyrinth;$prgCalc.width=$FrmLabyrinthian.width-460})
 $FrmLabyrinthian.Add_Shown({ClearLabyrinth;DrawLabyrinth;$FrmLabyrinthian.Update()})
 
 InitLabyrinth
