@@ -316,13 +316,15 @@ Function SolveLabyrinth {
         If (($global:labyrinth[$x][$y] -band 4) -eq 4 -and (($global:labyrinth[($x-1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x-1),$y,'l'))}
         If (($global:labyrinth[$x][$y] -band 8) -eq 8 -and (($global:labyrinth[($x+1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x+1),$y,'r'))}
         $numofposdir = $posdir.Count
-        $Moves++
-        $prgCalc.Value =$moves
+        If($Moves -lt $maxmoves) {
+            $Moves++
+            $prgCalc.Value = $moves
+        }
         If ($numofposdir -ne 0) {
-            #Random direction
-            #$movechoice = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
+                #Random direction
+            $movechoice = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
             #Directed direction
-            $movechoice = $posDir[0]
+            #$movechoice = $posDir[0]
             $direction = $movechoice[2]
             $global:labyrinth[$x][$y]-=($global:labyrinth[$x][$y] -band 240)
             Switch ($direction){
@@ -347,11 +349,12 @@ Function SolveLabyrinth {
             $Moves--
             $x = $moved[$progress][0]
             $y = $moved[$progress][1]
-            $global:labyrinth[$x][$y]-=($global:labyrinth[$x][$y] -band 240)
-            $global:labyrinth[$x][$y]+=240            
+            If (($global:labyrinth[$x][$y] -band 240) -ne 240) {
+                $global:labyrinth[$x][$y]+= 240 - ($global:labyrinth[$x][$y] -band 240)
+                DrawExplorer -x $x -y $y
+            }
             #Write-host "Backtrack: " -NoNewline
-            DrawExplorer -x $x -y $y
-        }
+            }
         #Write-host "$x $y"
     }
     #$global:labyrinth[$x][$y]-=64
