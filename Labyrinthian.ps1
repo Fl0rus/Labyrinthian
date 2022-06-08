@@ -209,7 +209,7 @@ Function InitLabyrinth(){
     $prgcalc.width = $FrmLabyrinthian.Width-460
 }
 Function ClearLabyrinth () {
-    $FrmLabyrinthian.Refresh()
+    #$FrmLabyrinthian.Refresh()
     $global:brushb = New-Object Drawing.SolidBrush Gray
     $global:Graphics = $FrmLabyrinthian.CreateGraphics()
     $global:Graphics.FillRectangle($global:brushb,0,0,$FrmLabyrinthian.Width,$FrmLabyrinthian.Height)
