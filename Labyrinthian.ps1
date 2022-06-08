@@ -5,8 +5,9 @@ Add-Type -AssemblyName PresentationCore,PresentationFramework
 
 $Global:FrmSizeX = 640
 $Global:FrmSizeY = 480
-$global:SizeX = 75
-$global:SizeY= 50
+#Initial labyrint width & Height
+$global:SizeX = 50
+$global:SizeY= 40
 
 #Global brushes
 $global:brushw = New-Object Drawing.SolidBrush White
@@ -51,22 +52,51 @@ $BtnSolveLabyrinth.Font                    = 'Microsoft Sans Serif,10'
 $BtnSolveLabyrinth.BackColor               = "#999999"
 $BtnSolveLabyrinth.Enabled = $false
 
+$BtnSettings                         = New-Object system.Windows.Forms.Button
+$BtnSettings.text                    = "Settings"
+$BtnSettings.width                   = 75
+$BtnSettings.height                  = 25
+$BtnSettings.location                = New-Object System.Drawing.Point(150,0)
+$BtnSettings.Font                    = 'Microsoft Sans Serif,10'
+$BtnSettings.BackColor               = "#999999"
+$BtnSettings.Enabled = $true
+
+$prgCalc = New-object System.Windows.Forms.ProgressBar
+$prgCalc.Width = $FrmLabyrinthian.width-225
+$prgCalc.Height = 20
+$prgcalc.value = 0
+$prgcalc.Location = New-Object System.Drawing.Point(225,0)
+
+$FrmLabyrinthianSettings                            = New-Object system.Windows.Forms.Form
+$FrmLabyrinthianSettings.ClientSize                 = "400,400"
+$FrmLabyrinthianSettings.text                       = "Labyrinth settings"
+$FrmLabyrinthianSettings.TopMost                    = $true
+$FrmLabyrinthianSettings.BackColor                  = "#888888"
+$FrmLabyrinthianSettings.StartPosition = 'Manual'
+$FrmLabyrinthianSettings.Location                    = New-Object System.Drawing.Point(10,10)
+
 $chkDrawLab = New-Object System.Windows.Forms.Checkbox
+$chkDrawLab.AutoSize = $true
 $chkDrawLab.Width = 25
 $chkDrawLab.Height = 25
 $chkDrawLab.Checked = $Global:DrawWhileBuilding
-$chkDrawLab.Location = New-Object System.Drawing.Point(155,0)
+$chkDrawLab.Text = "Draw while building"
+$chkDrawLab.Location = New-Object System.Drawing.Point(10,10)
 
 $chkDrawSol = New-Object System.Windows.Forms.Checkbox
+$chkDrawSol.AutoSize = $true
 $chkDrawSol.Width = 25
 $chkDrawSol.Height = 25
 $chkDrawSol.Checked = $Global:DrawWhileSearching
-$chkDrawSol.Location = New-Object System.Drawing.Point(180,0)
+$chkDrawSol.Text = "Draw while solving"
+$chkDrawSol.Location = New-Object System.Drawing.Point(10,30)
 
 $sldWidth = New-Object System.Windows.Forms.Trackbar
-$sldWidth.width = 100
-$sldWidth.Height = 5
-$sldWidth.location = New-Object System.Drawing.Point(205,0)
+$sldwidth.AutoSize = $true
+$sldwidth.Text = "Width"
+$sldWidth.width = 200
+$sldWidth.Height = 30
+$sldWidth.location = New-Object System.Drawing.Point(10,60)
 $sldwidth.Maximum = 200
 $sldWidth.Minimum = 5
 $sldWidth.Value = $global:SizeX
@@ -79,16 +109,18 @@ $sldWidth.BackColor = "#888888"
 
 $sldwidthNum = New-Object System.Windows.Forms.NumericUpDown
 $sldwidthNum.width = 45
-$sldwidthNum.Height = 25
-$sldwidthNum.Location = New-Object System.Drawing.Point(310,0)
+$sldwidthNum.Height = 30
+$sldwidthNum.Location = New-Object System.Drawing.Point(210,60)
 $sldwidthNum.Maximum = 200
 $sldwidthNum.Minimum = 5
 $sldwidthNum.value= $global:SizeX
 
 $sldHeight = New-Object System.Windows.Forms.Trackbar
-$sldHeight.width = 100
-$sldHeight.Height = 5
-$sldHeight.location = New-Object System.Drawing.Point(360,0)
+$sldHeight.AutoSize = $true
+$sldHeight.Text = "Height"
+$sldHeight.width = 200
+$sldHeight.Height = 30
+$sldHeight.location = New-Object System.Drawing.Point(10,100)
 $sldHeight.Maximum = 150
 $sldHeight.Minimum = 5
 $sldHeight.Value = $global:SizeY
@@ -99,18 +131,23 @@ $sldHeight.BackColor ='#888888'
 $sldHeightNum = New-Object System.Windows.Forms.NumericUpDown
 $sldHeightNum.width = 45
 $sldHeightNum.Height = 25
-$sldHeightNum.Location = New-Object System.Drawing.Point(465,0)
+$sldHeightNum.Location = New-Object System.Drawing.Point(210,100)
 $sldHeightNum.Maximum = 150
 $sldHeightNum.Minimum =5
 $sldHeightNum.value = $global:SizeY
 
-$prgCalc = New-object System.Windows.Forms.ProgressBar
-$prgCalc.Width = 40
-$prgCalc.Height = 20
-$prgcalc.value = 0
-$prgcalc.Location = New-Object System.Drawing.Point(510,0)
-
-$FrmLabyrinthian.controls.AddRange(@($BtnCreateLabyrinth,$BtnSolveLabyrinth,$chkDrawLab,$chkDrawSol,$sldWidth,$sldwidthNum,$sldHeight,$sldHeightNum,$prgCalc))
+$FrmLabyrinthian.controls.AddRange(@($BtnCreateLabyrinth,$BtnSolveLabyrinth,$BtnSettings,$prgCalc))
+Function ShowSettings(){
+    $FrmLabyrinthianSettings                            = New-Object system.Windows.Forms.Form
+    $FrmLabyrinthianSettings.ClientSize                 = "400,400"
+    $FrmLabyrinthianSettings.text                       = "Labyrinth settings"
+    $FrmLabyrinthianSettings.TopMost                    = $true
+    $FrmLabyrinthianSettings.BackColor                  = "#888888"
+    $FrmLabyrinthianSettings.StartPosition = 'Manual'
+    $FrmLabyrinthianSettings.Location                    = New-Object System.Drawing.Point(10,10)    
+    $FrmLabyrinthianSettings.controls.AddRange(@($chkDrawLab,$chkDrawSol,$sldWidth,$sldwidthNum,$sldHeight,$sldHeightNum))
+    $FrmLabyrinthianSettings.ShowDialog()
+}
 Function CreateLabyrinth () {
     #Fill labyrinth matrix array
     #ClearLabyrinth
@@ -206,9 +243,8 @@ Function InitLabyrinth(){
             $global:labyrinth[$i] += 0
         }
     }
-
     $global:Graphics = $FrmLabyrinthian.CreateGraphics()
-    $prgcalc.width = $FrmLabyrinthian.Width-460
+    $prgcalc.width = $FrmLabyrinthian.Width-225
 }
 Function ClearLabyrinth () {
     #$FrmLabyrinthian.Refresh()
@@ -224,8 +260,8 @@ Function DrawExplorer {
         [ValidateSet("NoDraw", "Draw","Raider")]$marker = 'Draw' 
     )
 
-    $offsetx = 20
-    $offsety = 50
+    $offsetx = 25
+    $offsety = 25
     $ScaleX = (($FrmLabyrinthian.Width-($offsetx*2))/ $global:SizeX)
     $ScaleY= ((($FrmLabyrinthian.Height - 25)-($offsety*2))/ $global:SizeY)
     $RoomScaleX = 0.75
@@ -432,16 +468,17 @@ $BtnCreateLabyrinth.Add_Click({
     If(-not $Global:DrawWhileSearching){DrawLabyrinth}
 })
 $BtnSolveLabyrinth.Add_Click({ SolveLabyrinth })
+$BtnSettings.Add_Click({ ShowSettings })
 $chkDrawLab.Add_CheckedChanged({$Global:DrawWhileBuilding = $chkDrawLab.Checked})
 $chkDrawSol.Add_CheckedChanged({$Global:DrawWhileSearching = $chkDrawSol.Checked})
 $sldWidth.Add_Scroll({ ChangeSizeX })
 $sldHeight.Add_Scroll({ ChangeSizeY })
 $sldwidthNum.Add_ValueChanged({ChangeSizeXNum})
 $sldHeightNum.Add_ValueChanged({ChangeSizeYNum})
-$FrmLabyrinthian.Add_ResizeEnd({ClearLabyrinth;DrawLabyrinth;$prgCalc.width=$FrmLabyrinthian.width-460})
+$FrmLabyrinthian.Add_ResizeEnd({ClearLabyrinth;DrawLabyrinth;$prgCalc.width=$FrmLabyrinthian.width-225})
 $FrmLabyrinthian.Add_SizeChanged({
     If ($FrmLabyrinthian.WindowState -ne 'Normal' -or $global:PreviousState -ne 'Normal') {
-        ClearLabyrinth;DrawLabyrinth;$prgCalc.width=$FrmLabyrinthian.width-460
+        ClearLabyrinth;DrawLabyrinth;$prgCalc.width=$FrmLabyrinthian.width-225
         $global:PreviousState = $FrmLabyrinthian.WindowState
     }
 })
