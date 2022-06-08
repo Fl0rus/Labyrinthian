@@ -220,44 +220,45 @@ Function DrawExplorer {
     } ElseIf($marker -eq 'Light') {
         $global:Graphics.FillRectangle($brushw,(($x+0.25)*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
     }Else{
-        Switch($global:labyrinth[$x][$y]) {
-            0 {
-                $global:Graphics.FillRectangle($brushb,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,$ScaleX,$scaleY)
-            }
-            {(1 -band $_) -eq 1} {
-                $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,(($y-0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-            }
-            {(2 -band $_) -eq 2} {
-                $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-            }
-            {(4 -band $_) -eq 4} {
-                $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                $global:Graphics.FillRectangle($brushw,(($x-0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-            }
-            {(8 -band $_) -eq 8} {
-                $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                $global:Graphics.FillRectangle($brushw,(($x+0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-            }
-        }
-        If ((($global:labyrinth[$x][$y] -band 240) -ne 240) -or (($global:labyrinth[$x][$y] -band 240) -eq 0)) {
+        If ((($global:labyrinth[$x][$y] -band 240) -ne 0) -and (($global:labyrinth[$x][$y] -band 240) -ne 240)) {
             Switch($global:labyrinth[$x][$y]) {
                 {(16 -band $_) -eq 16} {
-                    $global:Graphics.FillRectangle($brushb,(($x+0.25)*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
-                    $global:Graphics.FillRectangle($brushelb,(($x+0.25)*$scalex)+$offsetx,((($y+0.25)-0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
+                    $global:Graphics.FillRectangle($brushelb,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($brushelb,(($x)*$scalex)+$offsetx,((($y)-0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
                 }
                 {(32 -band $_) -eq 32} {
-                    $global:Graphics.FillRectangle($brushb,(($x+0.25)*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
-                    $global:Graphics.FillRectangle($brushelb,(($x+0.25)*$scalex)+$offsetx,((($y+0.25)+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
+                    $global:Graphics.FillRectangle($brushelb,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($brushelb,(($x)*$scalex)+$offsetx,((($y)+0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
                 }
                 {(64 -band $_) -eq 64} {
-                    $global:Graphics.FillRectangle($brushb,(($x+0.25)*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
-                    $global:Graphics.FillRectangle($brushelb,(($x-0.25)*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
+                    $global:Graphics.FillRectangle($brushelb,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($brushelb,((($x)-0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
                 }
                 {(128 -band $_) -eq 128} {
-                    $global:Graphics.FillRectangle($brushb,(($x+0.25)*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
-                    $global:Graphics.FillRectangle($brushelb,((($x+0.25)+0.25)*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
+                    $global:Graphics.FillRectangle($brushelb,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($brushelb,((($x)+0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                }
+            }
+        } Else {
+            Switch($global:labyrinth[$x][$y]) {
+                0 {
+                    $global:Graphics.FillRectangle($brushb,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,$ScaleX,$scaleY)
+                }
+                {(1 -band $_) -eq 1} {
+                    $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,(($y-0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                }
+                {(2 -band $_) -eq 2} {
+                    $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                }
+                {(4 -band $_) -eq 4} {
+                    $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($brushw,(($x-0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                }
+                {(8 -band $_) -eq 8} {
+                    $global:Graphics.FillRectangle($brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($brushw,(($x+0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
                 }
             }
         }
@@ -390,7 +391,13 @@ $sldHeight.Add_Scroll({ ChangeSizeY })
 $sldwidthNum.Add_ValueChanged({ChangeSizeXNum})
 $sldHeightNum.Add_ValueChanged({ChangeSizeYNum})
 $FrmLabyrinthian.Add_ResizeEnd({ClearLabyrinth;DrawLabyrinth;$prgCalc.width=$FrmLabyrinthian.width-460})
-$FrmLabyrinthian.Add_Shown({ClearLabyrinth;DrawLabyrinth;$FrmLabyrinthian.Update()})
+$FrmLabyrinthian.Add_SizeChanged({
+    If ($FrmLabyrinthian.WindowState -eq 'Maximized' -or $global:PreviousState -eq 'Maximized') {
+        ClearLabyrinth;DrawLabyrinth;$prgCalc.width=$FrmLabyrinthian.width-460
+        $global:PreviousState = $FrmLabyrinthian.WindowState
+    }
+})
+$FrmLabyrinthian.Add_Shown({CreateLabyrinth})
 
 InitLabyrinth
 #CreateLabyrinth
