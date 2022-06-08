@@ -3,21 +3,23 @@ Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName PresentationCore,PresentationFramework
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
-$Global:FrmSizeX =500
-$Global:FrmSizeY =500
-$global:SizeX = 50
-$global:SizeY= 25
+$Global:FrmSizeX = 640
+$Global:FrmSizeY = 480
+$global:SizeX = 75
+$global:SizeY= 50
 
 #Global brushes
 $global:brushw = New-Object Drawing.SolidBrush White
 $global:brushbl = New-Object Drawing.SolidBrush Black
 $global:brushg = New-Object Drawing.SolidBrush Green
-$global:brushf = New-Object Drawing.SolidBrush DarkBlue
-$global:brushb = New-Object Drawing.SolidBrush Blue
-$global:brushr = New-Object Drawing.SolidBrush Red
-$global:brushlc = New-Object Drawing.SolidBrush LightCyan
+$global:brushdb = New-Object Drawing.SolidBrush DarkBlue
+$global:brushfin = New-Object Drawing.SolidBrush Purple
+$global:brushbc = New-Object Drawing.SolidBrush Lavender
+$global:brushr = New-Object Drawing.SolidBrush Tomato
+$global:brushlc = New-Object Drawing.SolidBrush WhiteSmoke
 
 #Global settings
+$Global:DrawWhileBuilding = $false
 $Global:DrawWhileSearching = $false
 
 Clear-Host
@@ -47,11 +49,23 @@ $BtnSolveLabyrinth.Font                    = 'Microsoft Sans Serif,10'
 $BtnSolveLabyrinth.BackColor               = "#999999"
 $BtnSolveLabyrinth.Enabled = $false
 
+$chkDrawLab = New-Object System.Windows.Forms.Checkbox
+$chkDrawLab.Width = 25
+$chkDrawLab.Height = 25
+$chkDrawLab.Checked = $Global:DrawWhileBuilding
+$chkDrawLab.Location = New-Object System.Drawing.Point(155,0)
+
+$chkDrawSol = New-Object System.Windows.Forms.Checkbox
+$chkDrawSol.Width = 25
+$chkDrawSol.Height = 25
+$chkDrawSol.Checked = $Global:DrawWhileSearching
+$chkDrawSol.Location = New-Object System.Drawing.Point(180,0)
+
 $sldWidth = New-Object System.Windows.Forms.Trackbar
 $sldWidth.width = 100
 $sldWidth.Height = 5
-$sldWidth.location = New-Object System.Drawing.Point(155,0)
-$sldwidth.Maximum = 150
+$sldWidth.location = New-Object System.Drawing.Point(205,0)
+$sldwidth.Maximum = 200
 $sldWidth.Minimum = 5
 $sldWidth.Value = $global:SizeX
 $sldwidth.AutoSize = $True
@@ -64,15 +78,15 @@ $sldWidth.BackColor = "#888888"
 $sldwidthNum = New-Object System.Windows.Forms.NumericUpDown
 $sldwidthNum.width = 45
 $sldwidthNum.Height = 25
-$sldwidthNum.Location = New-Object System.Drawing.Point(260,0)
-$sldwidthNum.Maximum = 150
+$sldwidthNum.Location = New-Object System.Drawing.Point(310,0)
+$sldwidthNum.Maximum = 200
 $sldwidthNum.Minimum = 5
 $sldwidthNum.value= $global:SizeX
 
 $sldHeight = New-Object System.Windows.Forms.Trackbar
 $sldHeight.width = 100
 $sldHeight.Height = 5
-$sldHeight.location = New-Object System.Drawing.Point(310,0)
+$sldHeight.location = New-Object System.Drawing.Point(360,0)
 $sldHeight.Maximum = 150
 $sldHeight.Minimum = 5
 $sldHeight.Value = $global:SizeY
@@ -83,7 +97,7 @@ $sldHeight.BackColor ='#888888'
 $sldHeightNum = New-Object System.Windows.Forms.NumericUpDown
 $sldHeightNum.width = 45
 $sldHeightNum.Height = 25
-$sldHeightNum.Location = New-Object System.Drawing.Point(415,0)
+$sldHeightNum.Location = New-Object System.Drawing.Point(465,0)
 $sldHeightNum.Maximum = 150
 $sldHeightNum.Minimum =5
 $sldHeightNum.value = $global:SizeY
@@ -92,9 +106,9 @@ $prgCalc = New-object System.Windows.Forms.ProgressBar
 $prgCalc.Width = 40
 $prgCalc.Height = 20
 $prgcalc.value = 0
-$prgcalc.Location = New-Object System.Drawing.Point(460,0)
+$prgcalc.Location = New-Object System.Drawing.Point(510,0)
 
-$FrmLabyrinthian.controls.AddRange(@($BtnCreateLabyrinth,$BtnSolveLabyrinth,$sldWidth,$sldwidthNum,$sldHeight,$sldHeightNum,$prgCalc))
+$FrmLabyrinthian.controls.AddRange(@($BtnCreateLabyrinth,$BtnSolveLabyrinth,$chkDrawLab,$chkDrawSol,$sldWidth,$sldwidthNum,$sldHeight,$sldHeightNum,$prgCalc))
 Function CreateLabyrinth () {
     #Fill labyrinth matrix array
     #ClearLabyrinth
@@ -110,7 +124,7 @@ Function CreateLabyrinth () {
     $prgCalc.Maximum=$global:SizeX*$global:SizeY
     [System.Collections.ArrayList]$moved = @()
     [System.Collections.ArrayList]$endpoints = @()
-    DrawExplorer -x $x -y $y
+    If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
     While($pointer -ge 0) {
         [System.Collections.ArrayList]$posDir = @()
         If ($y -gt 0) {
@@ -162,7 +176,7 @@ Function CreateLabyrinth () {
             $global:labyrinth[$x][$y] = $value
             #Write-host "Step $pointer = Moved to $x $y"
             $prgCalc.Value = $progress
-            If($Global:DrawWhileSearching){DrawExplorer -x $x -y $y}
+            If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
             $progress++
         } ElseIf ($pointer -gt $pointermax) {
            $pointermax=$pointer+1
@@ -178,10 +192,7 @@ Function CreateLabyrinth () {
     $endpoint=$endpoints[(Get-Random -Minimum 0 -Maximum $endpoints.Count)]
     $global:labyrinth[$endpoint[0]][$endpoint[1]] = 512 #finish
     $Global:Finish=@($endpoint[0],$endpoint[1])
-    DrawExplorer -x ($endpoint[0]) -y ($endpoint[1])
-    #Draw labyrinth
-    #ClearLabyrinth
-    #DrawLabyrinth
+    If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
 }
 Function InitLabyrinth(){
     #Draw stuff prep
@@ -208,15 +219,19 @@ Function DrawExplorer {
     Param (
         $x,
         $y,
-        [ValidateSet("NoDraw", "Draw")]$marker = 'Draw' 
+        [ValidateSet("NoDraw", "Draw","Raider")]$marker = 'Draw' 
     )
 
     $offsetx = 20
     $offsety = 50
     $ScaleX = (($FrmLabyrinthian.Width-($offsetx*2))/ $global:SizeX)
     $ScaleY= ((($FrmLabyrinthian.Height - 25)-($offsety*2))/ $global:SizeY)
-    $RoomSizeX = $ScaleX * 0.75
-    $RoomsizeY = $Scaley * 0.75
+    $RoomScaleX = 0.75
+    $RoomScaleY = 0.75
+    $RoomSizeX = $ScaleX * $RoomScaleX
+    $RoomsizeY = $Scaley * $RoomScaleY
+    $RoomScaleXX =1-$RoomScaleX
+    $RoomScaleYY =1-$RoomScaleY
     If($marker -eq 'Nodraw') {
         $global:Graphics.FillRectangle($global:brushb,($x*$scalex)+$offsetx,($y*$scaleY+0.25)+$offsety,($RoomSizeX),($RoomsizeY))
     }Else{
@@ -224,19 +239,19 @@ Function DrawExplorer {
             Switch($global:labyrinth[$x][$y]) {
                 {(16 -band $_) -eq 16} {
                     $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,((($y)-0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,((($y)-$RoomScaleYY)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
                 }
                 {(32 -band $_) -eq 32} {
                     $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,((($y)+0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,((($y)+$RoomScaleYY)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
                 }
                 {(64 -band $_) -eq 64} {
                     $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushr,((($x)-0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($global:brushr,((($x)-$RoomScaleXX)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
                 }
                 {(128 -band $_) -eq 128} {
                     $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushr,((($x)+0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($global:brushr,((($x)+$RoomScaleXX)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
                 }
             }
         } Else {
@@ -263,14 +278,21 @@ Function DrawExplorer {
             }
         }
         Switch($global:labyrinth[$x][$y]) {
+            #Breadcrumbs
             {(240 -band $_) -eq 240} {
-                $global:Graphics.FillRectangle($global:brushr,(($x+0.25)*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX/2),($RoomsizeY/2))
+                $global:Graphics.FillRectangle($global:brushlc,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
             }
+            #Start
             {(256 -band $_) -eq 256} {
                 $global:Graphics.FillRectangle($global:brushg,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
             }
+            #Finish
             {(512 -band $_) -eq 512} {
-                $global:Graphics.FillRectangle($global:brushf,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                $global:Graphics.FillRectangle($global:brushfin,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+            }
+            #DeadEnds
+            {(1024 -band $_) -eq 1024} {
+                $global:Graphics.FillRectangle($global:brushbc,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
             }
         }
     }
@@ -334,7 +356,10 @@ Function SolveLabyrinth {
                 'l' {$global:labyrinth[$x][$y]+=64}
                 'r' {$global:labyrinth[$x][$y]+=128}
             }
-            If($Global:DrawWhileSearching){DrawExplorer -x $x -y $y}
+            If($Global:DrawWhileSearching){
+                DrawExplorer -x $x -y $y
+                Start-Sleep -Milliseconds 25
+            }
             $x = $movechoice[0]
             $y = $movechoice[1]
             $global:labyrinth[$x][$y]+=240
@@ -343,17 +368,25 @@ Function SolveLabyrinth {
             #Write-host "New route: " -NoNewline
         } ElseIf($progress -gt $progressmax) {
             $progressmax=$Progress+1
-            #Write-host "Dead End: " -NoNewline
-            #DrawExplorer -x $x -y $y -Marker Normal
+            $global:labyrinth[$x][$y]+= 240 - ($global:labyrinth[$x][$y] -band 240)
+            $global:labyrinth[$x][$y]+= 1024
+            If($Global:DrawWhileSearching){
+                DrawExplorer -x $x -y $y
+                Start-Sleep -Milliseconds 10
+            }
+            #Write-host "Deadend at $x $y"
         } Else {
             $Progress--
             $Moves--
-            $x = $moved[$progress][0]
-            $y = $moved[$progress][1]
             If (($global:labyrinth[$x][$y] -band 240) -ne 240) {
                 $global:labyrinth[$x][$y]+= 240 - ($global:labyrinth[$x][$y] -band 240)
-                If($Global:DrawWhileSearching){DrawExplorer -x $x -y $y}
+                If($Global:DrawWhileSearching){
+                    DrawExplorer -x $x -y $y
+                    Start-Sleep -Milliseconds 10
+                }
             }
+            $x = $moved[$progress][0]
+            $y = $moved[$progress][1]
             #Write-host "Backtrack: " -NoNewline
             }
         #Write-host "$x $y"
@@ -391,7 +424,8 @@ $BtnCreateLabyrinth.Add_Click({
     If(-not $Global:DrawWhileSearching){DrawLabyrinth}
 })
 $BtnSolveLabyrinth.Add_Click({ SolveLabyrinth })
-
+$chkDrawLab.Add_CheckedChanged({$Global:DrawWhileBuilding = $chkDrawLab.Checked})
+$chkDrawSol.Add_CheckedChanged({$Global:DrawWhileSearching = $chkDrawSol.Checked})
 $sldWidth.Add_Scroll({ ChangeSizeX })
 $sldHeight.Add_Scroll({ ChangeSizeY })
 $sldwidthNum.Add_ValueChanged({ChangeSizeXNum})
