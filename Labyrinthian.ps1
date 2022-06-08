@@ -17,10 +17,12 @@ $global:brushfin = New-Object Drawing.SolidBrush Purple
 $global:brushbc = New-Object Drawing.SolidBrush Lavender
 $global:brushr = New-Object Drawing.SolidBrush Tomato
 $global:brushlc = New-Object Drawing.SolidBrush WhiteSmoke
+$global:brushPlayer = New-Object Drawing.SolidBrush Red
 
 #Global settings
 $Global:DrawWhileBuilding = $false
 $Global:DrawWhileSearching = $false
+$global:PlayerPause = 10
 
 Clear-Host
 $FrmLabyrinthian                            = New-Object system.Windows.Forms.Form
@@ -292,7 +294,8 @@ Function DrawExplorer {
             }
             #DeadEnds
             {(1024 -band $_) -eq 1024} {
-                $global:Graphics.FillRectangle($global:brushbc,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                $global:Graphics.FillRectangle($global:brushPlayer,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                $global:labyrinth[$x][$y]-= 1024
             }
         }
     }
@@ -357,8 +360,10 @@ Function SolveLabyrinth {
                 'r' {$global:labyrinth[$x][$y]+=128}
             }
             If($Global:DrawWhileSearching){
+                $global:labyrinth[$x][$y]+= 1024
                 DrawExplorer -x $x -y $y
-                Start-Sleep -Milliseconds 25
+                Start-Sleep -Milliseconds $global:PlayerPause
+                DrawExplorer -x $x -y $y
             }
             $x = $movechoice[0]
             $y = $movechoice[1]
@@ -369,10 +374,11 @@ Function SolveLabyrinth {
         } ElseIf($progress -gt $progressmax) {
             $progressmax=$Progress+1
             $global:labyrinth[$x][$y]+= 240 - ($global:labyrinth[$x][$y] -band 240)
-            $global:labyrinth[$x][$y]+= 1024
             If($Global:DrawWhileSearching){
+                $global:labyrinth[$x][$y]+= 1024
                 DrawExplorer -x $x -y $y
-                Start-Sleep -Milliseconds 10
+                Start-Sleep -Milliseconds $global:PlayerPause
+                DrawExplorer -x $x -y $y
             }
             #Write-host "Deadend at $x $y"
         } Else {
@@ -381,10 +387,12 @@ Function SolveLabyrinth {
             If (($global:labyrinth[$x][$y] -band 240) -ne 240) {
                 $global:labyrinth[$x][$y]+= 240 - ($global:labyrinth[$x][$y] -band 240)
                 If($Global:DrawWhileSearching){
+                    $global:labyrinth[$x][$y]+= 1024
                     DrawExplorer -x $x -y $y
-                    Start-Sleep -Milliseconds 10
+                    Start-Sleep -Milliseconds $global:PlayerPause
+                    DrawExplorer -x $x -y $y
                 }
-            }
+                }
             $x = $moved[$progress][0]
             $y = $moved[$progress][1]
             #Write-host "Backtrack: " -NoNewline
@@ -432,7 +440,7 @@ $sldwidthNum.Add_ValueChanged({ChangeSizeXNum})
 $sldHeightNum.Add_ValueChanged({ChangeSizeYNum})
 $FrmLabyrinthian.Add_ResizeEnd({ClearLabyrinth;DrawLabyrinth;$prgCalc.width=$FrmLabyrinthian.width-460})
 $FrmLabyrinthian.Add_SizeChanged({
-    If ($FrmLabyrinthian.WindowState -eq 'Maximized' -or $global:PreviousState -eq 'Maximized') {
+    If ($FrmLabyrinthian.WindowState -ne 'Normal' -or $global:PreviousState -ne 'Normal') {
         ClearLabyrinth;DrawLabyrinth;$prgCalc.width=$FrmLabyrinthian.width-460
         $global:PreviousState = $FrmLabyrinthian.WindowState
     }
