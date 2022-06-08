@@ -101,11 +101,9 @@ $sldwidth.Maximum = 200
 $sldWidth.Minimum = 5
 $sldWidth.Value = $global:SizeX
 $sldwidth.AutoSize = $True
-$sldwidth.TickStyle = 0
+$sldwidth.TickStyle = 2
+$sldwidth.TickFrequency = 10
 $sldWidth.Orientation = 0
-$sldWidth.Margin =0
-$sldwidth.Padding =0
-$sldWidth.BackColor = "#888888"
 
 $sldwidthNum = New-Object System.Windows.Forms.NumericUpDown
 $sldwidthNum.width = 45
@@ -124,9 +122,9 @@ $sldHeight.location = New-Object System.Drawing.Point(10,100)
 $sldHeight.Maximum = 150
 $sldHeight.Minimum = 5
 $sldHeight.Value = $global:SizeY
-$sldHeight.TickStyle = 0
+$sldHeight.TickFrequency = 10
+$sldHeight.TickStyle = 2
 $sldHeight.Orientation = 0
-$sldHeight.BackColor ='#888888'
 
 $sldHeightNum = New-Object System.Windows.Forms.NumericUpDown
 $sldHeightNum.width = 45
@@ -136,16 +134,37 @@ $sldHeightNum.Maximum = 150
 $sldHeightNum.Minimum =5
 $sldHeightNum.value = $global:SizeY
 
+$sldSpeed = New-Object System.Windows.Forms.Trackbar
+$sldSpeed.AutoSize = $true
+$sldSpeed.Text = "Speed"
+$sldSpeed.width = 200
+$sldSpeed.Height = 30
+$sldSpeed.location = New-Object System.Drawing.Point(10,130)
+$sldSpeed.Maximum = 250
+$sldSpeed.Minimum = 0
+$sldSpeed.Value = $global:PlayerPause
+$sldSpeed.TickFrequency = 10
+$sldSpeed.TickStyle = 2
+$sldSpeed.Orientation = 0
+
+$sldSpeedNum = New-Object System.Windows.Forms.NumericUpDown
+$sldSpeedNum.width = 45
+$sldSpeedNum.Height = 25
+$sldSpeedNum.Location = New-Object System.Drawing.Point(210,130)
+$sldSpeedNum.Maximum = 250
+$sldSpeedNum.Minimum =0
+$sldSpeedNum.value = $global:PlayerPause
+
 $FrmLabyrinthian.controls.AddRange(@($BtnCreateLabyrinth,$BtnSolveLabyrinth,$BtnSettings,$prgCalc))
 Function ShowSettings(){
     $FrmLabyrinthianSettings                            = New-Object system.Windows.Forms.Form
     $FrmLabyrinthianSettings.ClientSize                 = "400,400"
     $FrmLabyrinthianSettings.text                       = "Labyrinth settings"
     $FrmLabyrinthianSettings.TopMost                    = $true
-    $FrmLabyrinthianSettings.BackColor                  = "#888888"
+    #$FrmLabyrinthianSettings.BackColor                  = LightGrey
     $FrmLabyrinthianSettings.StartPosition = 'Manual'
     $FrmLabyrinthianSettings.Location                    = New-Object System.Drawing.Point(10,10)    
-    $FrmLabyrinthianSettings.controls.AddRange(@($chkDrawLab,$chkDrawSol,$sldWidth,$sldwidthNum,$sldHeight,$sldHeightNum))
+    $FrmLabyrinthianSettings.controls.AddRange(@($chkDrawLab,$chkDrawSol,$sldWidth,$sldwidthNum,$sldHeight,$sldHeightNum,$sldSpeed,$sldSpeedNum))
     $FrmLabyrinthianSettings.ShowDialog()
 }
 Function CreateLabyrinth () {
@@ -450,6 +469,10 @@ function ChangeSizeY () {
     $global:SizeY = $sldHeight.Value
     $BtnSolveLabyrinth.Enabled=$false
 }
+function ChangeSpeed () {
+    $sldSpeedNum.Value = $sldSpeed.Value
+    $global:PlayerPause = $sldSpeed.Value
+}
 function ChangeSizeXNum () {
     $sldWidth.Value = $sldWidthNum.Value 
     $global:SizeX = $sldWidth.Value
@@ -459,6 +482,10 @@ function ChangeSizeYNum () {
     $sldHeight.Value = $sldHeightNum.Value 
     $global:SizeY = $sldHeight.Value
     $BtnSolveLabyrinth.Enabled=$false
+}
+function ChangeSpeedNum () {
+    $sldSpeed.Value = $sldSpeedNum.Value 
+    $global:PlayerPause = $sldSpeed.Value
 }
 
 $BtnCreateLabyrinth.Add_Click({
@@ -473,8 +500,10 @@ $chkDrawLab.Add_CheckedChanged({$Global:DrawWhileBuilding = $chkDrawLab.Checked}
 $chkDrawSol.Add_CheckedChanged({$Global:DrawWhileSearching = $chkDrawSol.Checked})
 $sldWidth.Add_Scroll({ ChangeSizeX })
 $sldHeight.Add_Scroll({ ChangeSizeY })
+$sldSpeed.Add_Scroll({ ChangeSpeed })
 $sldwidthNum.Add_ValueChanged({ChangeSizeXNum})
 $sldHeightNum.Add_ValueChanged({ChangeSizeYNum})
+$sldSpeedNum.Add_ValueChanged({ChangeSpeedNum})
 $FrmLabyrinthian.Add_ResizeEnd({ClearLabyrinth;DrawLabyrinth;$prgCalc.width=$FrmLabyrinthian.width-225})
 $FrmLabyrinthian.Add_SizeChanged({
     If ($FrmLabyrinthian.WindowState -ne 'Normal' -or $global:PreviousState -ne 'Normal') {
