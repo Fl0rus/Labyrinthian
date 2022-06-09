@@ -22,8 +22,9 @@ $global:brushPlayer = New-Object Drawing.SolidBrush Red
 
 #Global settings
 $Global:DrawWhileBuilding = $false
-$Global:DrawWhileSearching = $false
+$Global:DrawWhileSearching = $true
 $global:PlayerPause = 10
+$global:ClearLabBeforeSearching = $true
 
 Clear-Host
 $FrmLabyrinthian                            = New-Object system.Windows.Forms.Form
@@ -67,104 +68,103 @@ $prgCalc.Height = 20
 $prgcalc.value = 0
 $prgcalc.Location = New-Object System.Drawing.Point(225,0)
 
-$FrmLabyrinthianSettings                            = New-Object system.Windows.Forms.Form
-$FrmLabyrinthianSettings.ClientSize                 = "400,400"
-$FrmLabyrinthianSettings.text                       = "Labyrinth settings"
-$FrmLabyrinthianSettings.TopMost                    = $true
-$FrmLabyrinthianSettings.BackColor                  = "#888888"
-$FrmLabyrinthianSettings.StartPosition = 'Manual'
-$FrmLabyrinthianSettings.Location                    = New-Object System.Drawing.Point(10,10)
-
-$chkDrawLab = New-Object System.Windows.Forms.Checkbox
-$chkDrawLab.AutoSize = $true
-$chkDrawLab.Width = 25
-$chkDrawLab.Height = 25
-$chkDrawLab.Checked = $Global:DrawWhileBuilding
-$chkDrawLab.Text = "Draw while building"
-$chkDrawLab.Location = New-Object System.Drawing.Point(10,10)
-
-$chkDrawSol = New-Object System.Windows.Forms.Checkbox
-$chkDrawSol.AutoSize = $true
-$chkDrawSol.Width = 25
-$chkDrawSol.Height = 25
-$chkDrawSol.Checked = $Global:DrawWhileSearching
-$chkDrawSol.Text = "Draw while solving"
-$chkDrawSol.Location = New-Object System.Drawing.Point(10,30)
-
-$sldWidth = New-Object System.Windows.Forms.Trackbar
-$sldwidth.AutoSize = $true
-$sldwidth.Text = "Width"
-$sldWidth.width = 200
-$sldWidth.Height = 30
-$sldWidth.location = New-Object System.Drawing.Point(10,60)
-$sldwidth.Maximum = 200
-$sldWidth.Minimum = 5
-$sldWidth.Value = $global:SizeX
-$sldwidth.AutoSize = $True
-$sldwidth.TickStyle = 2
-$sldwidth.TickFrequency = 10
-$sldWidth.Orientation = 0
-
-$sldwidthNum = New-Object System.Windows.Forms.NumericUpDown
-$sldwidthNum.width = 45
-$sldwidthNum.Height = 30
-$sldwidthNum.Location = New-Object System.Drawing.Point(210,60)
-$sldwidthNum.Maximum = 200
-$sldwidthNum.Minimum = 5
-$sldwidthNum.value= $global:SizeX
-
-$sldHeight = New-Object System.Windows.Forms.Trackbar
-$sldHeight.AutoSize = $true
-$sldHeight.Text = "Height"
-$sldHeight.width = 200
-$sldHeight.Height = 30
-$sldHeight.location = New-Object System.Drawing.Point(10,100)
-$sldHeight.Maximum = 150
-$sldHeight.Minimum = 5
-$sldHeight.Value = $global:SizeY
-$sldHeight.TickFrequency = 10
-$sldHeight.TickStyle = 2
-$sldHeight.Orientation = 0
-
-$sldHeightNum = New-Object System.Windows.Forms.NumericUpDown
-$sldHeightNum.width = 45
-$sldHeightNum.Height = 25
-$sldHeightNum.Location = New-Object System.Drawing.Point(210,100)
-$sldHeightNum.Maximum = 150
-$sldHeightNum.Minimum =5
-$sldHeightNum.value = $global:SizeY
-
-$sldSpeed = New-Object System.Windows.Forms.Trackbar
-$sldSpeed.AutoSize = $true
-$sldSpeed.Text = "Speed"
-$sldSpeed.width = 200
-$sldSpeed.Height = 30
-$sldSpeed.location = New-Object System.Drawing.Point(10,130)
-$sldSpeed.Maximum = 250
-$sldSpeed.Minimum = 0
-$sldSpeed.Value = $global:PlayerPause
-$sldSpeed.TickFrequency = 10
-$sldSpeed.TickStyle = 2
-$sldSpeed.Orientation = 0
-
-$sldSpeedNum = New-Object System.Windows.Forms.NumericUpDown
-$sldSpeedNum.width = 45
-$sldSpeedNum.Height = 25
-$sldSpeedNum.Location = New-Object System.Drawing.Point(210,130)
-$sldSpeedNum.Maximum = 250
-$sldSpeedNum.Minimum =0
-$sldSpeedNum.value = $global:PlayerPause
-
 $FrmLabyrinthian.controls.AddRange(@($BtnCreateLabyrinth,$BtnSolveLabyrinth,$BtnSettings,$prgCalc))
+$FrmLabyrinthianSettings                            = New-Object system.Windows.Forms.Form
+
 Function ShowSettings(){
-    $FrmLabyrinthianSettings                            = New-Object system.Windows.Forms.Form
     $FrmLabyrinthianSettings.ClientSize                 = "400,400"
     $FrmLabyrinthianSettings.text                       = "Labyrinth settings"
     $FrmLabyrinthianSettings.TopMost                    = $true
-    #$FrmLabyrinthianSettings.BackColor                  = LightGrey
-    $FrmLabyrinthianSettings.StartPosition = 'Manual'
-    $FrmLabyrinthianSettings.Location                    = New-Object System.Drawing.Point(10,10)    
+    #$FrmLabyrinthianSettings.BackColor                  = 'LightGrey'
+    #$FrmLabyrinthianSettings.StartPosition              = 'Manual'
+
+    $chkDrawLab = New-Object System.Windows.Forms.Checkbox
+    $chkDrawLab.AutoSize = $true
+    $chkDrawLab.Width = 25
+    $chkDrawLab.Height = 25
+    $chkDrawLab.Checked = $Global:DrawWhileBuilding
+    $chkDrawLab.Text = "Draw while building"
+    $chkDrawLab.Location = New-Object System.Drawing.Point(10,10)
+    
+    $chkDrawSol = New-Object System.Windows.Forms.Checkbox
+    $chkDrawSol.AutoSize = $true
+    $chkDrawSol.Width = 25
+    $chkDrawSol.Height = 25
+    $chkDrawSol.Checked = $Global:DrawWhileSearching
+    $chkDrawSol.Text = "Draw while solving"
+    $chkDrawSol.Location = New-Object System.Drawing.Point(10,30)
+    
+    $sldWidth = New-Object System.Windows.Forms.Trackbar
+    $sldwidth.AutoSize = $true
+    $sldwidth.Text = "Width"
+    $sldWidth.width = 200
+    $sldWidth.Height = 30
+    $sldWidth.location = New-Object System.Drawing.Point(10,60)
+    $sldwidth.Maximum = 200
+    $sldWidth.Minimum = 5
+    $sldWidth.Value = $global:SizeX
+    $sldwidth.AutoSize = $True
+    $sldwidth.TickStyle = 2
+    $sldwidth.TickFrequency = 10
+    $sldWidth.Orientation = 0
+    
+    $sldwidthNum = New-Object System.Windows.Forms.NumericUpDown
+    $sldwidthNum.width = 45
+    $sldwidthNum.Height = 30
+    $sldwidthNum.Location = New-Object System.Drawing.Point(210,60)
+    $sldwidthNum.Maximum = 200
+    $sldwidthNum.Minimum = 5
+    $sldwidthNum.value= $global:SizeX
+    
+    $sldHeight = New-Object System.Windows.Forms.Trackbar
+    $sldHeight.AutoSize = $true
+    $sldHeight.Text = "Height"
+    $sldHeight.width = 200
+    $sldHeight.Height = 30
+    $sldHeight.location = New-Object System.Drawing.Point(10,100)
+    $sldHeight.Maximum = 150
+    $sldHeight.Minimum = 5
+    $sldHeight.Value = $global:SizeY
+    $sldHeight.TickFrequency = 10
+    $sldHeight.TickStyle = 2
+    $sldHeight.Orientation = 0
+    
+    $sldHeightNum = New-Object System.Windows.Forms.NumericUpDown
+    $sldHeightNum.width = 45
+    $sldHeightNum.Height = 25
+    $sldHeightNum.Location = New-Object System.Drawing.Point(210,100)
+    $sldHeightNum.Maximum = 150
+    $sldHeightNum.Minimum =5
+    $sldHeightNum.value = $global:SizeY
+    
+    $sldSpeed = New-Object System.Windows.Forms.Trackbar
+    $sldSpeed.AutoSize = $true
+    $sldSpeed.Text = "Speed"
+    $sldSpeed.width = 200
+    $sldSpeed.Height = 30
+    $sldSpeed.location = New-Object System.Drawing.Point(10,150)
+    $sldSpeed.Maximum = 250
+    $sldSpeed.Minimum = 0
+    $sldSpeed.Value = $global:PlayerPause
+    $sldSpeed.TickFrequency = 10
+    $sldSpeed.TickStyle = 2
+    $sldSpeed.Orientation = 0
+    
+    $sldSpeedNum = New-Object System.Windows.Forms.NumericUpDown
+    $sldSpeedNum.width = 45
+    $sldSpeedNum.Height = 25
+    $sldSpeedNum.Location = New-Object System.Drawing.Point(210,150)
+    $sldSpeedNum.Maximum = 250
+    $sldSpeedNum.Minimum =0
+    $sldSpeedNum.value = $global:PlayerPause
+
     $FrmLabyrinthianSettings.controls.AddRange(@($chkDrawLab,$chkDrawSol,$sldWidth,$sldwidthNum,$sldHeight,$sldHeightNum,$sldSpeed,$sldSpeedNum))
+
+    $formlocx = ($FrmLabyrinthian.Location.X) + ($FrmLabyrinthian.Width) - 400
+    $formlocy = ($FrmLabyrinthian.Location.Y) + ($FrmLabyrinthian.Height) - 400
+    Write-Host "$formlocX - $formlocY"
+    $FrmLabyrinthianSettings.Location = New-Object System.Drawing.Point($formlocX,$formlocY)    
+
     $FrmLabyrinthianSettings.ShowDialog()
 }
 Function CreateLabyrinth () {
@@ -369,6 +369,7 @@ Function DrawLabyrinth {
 
 Function SolveLabyrinth {
     Param ()
+    #Clear breadcrumbs
     For($i=0;$i -lt  $global:SizeX;$i++) {
         For ($o=0;$o -lt  $global:SizeY;$o++) {
             $breadcrumb = ($global:labyrinth[$i][$o]) -band 240
@@ -378,7 +379,7 @@ Function SolveLabyrinth {
         }
     }
     #ClearLabyrinth
-    #DrawLabyrinth
+    If ($global:ClearLabBeforeSearching) {DrawLabyrinth}
     #Write-host "$global:start $global:finish"
     $x =$global:start[0]
     $y =$global:start[1]
@@ -389,7 +390,6 @@ Function SolveLabyrinth {
     $prgCalc.Value =$moves
     $prgCalc.Maximum =$maxmoves
     [System.Collections.ArrayList]$moved=@()
-    #DrawExplorer -x $x -y $y -marker Bold
     While (($global:labyrinth[$x][$y] -band 512) -ne 512) {
         [System.Collections.ArrayList]$posDir = @()
         If (($global:labyrinth[$x][$y] -band 1) -eq 1 -and (($global:labyrinth[$x][($y-1)] -band 240) -eq 0)) {$posdir.add(@($x,($y-1),'u'))}
@@ -492,7 +492,7 @@ $BtnCreateLabyrinth.Add_Click({
     InitLabyrinth
     ClearLabyrinth
     CreateLabyrinth
-    If(-not $Global:DrawWhileSearching){DrawLabyrinth}
+    If(-not $Global:DrawWhilebuilding){DrawLabyrinth}
 })
 $BtnSolveLabyrinth.Add_Click({ SolveLabyrinth })
 $BtnSettings.Add_Click({ ShowSettings })
@@ -512,11 +512,9 @@ $FrmLabyrinthian.Add_SizeChanged({
     }
 })
 $FrmLabyrinthian.Add_Shown({
+    InitLabyrinth
     CreateLabyrinth
-    If(-not $Global:DrawWhileSearching){DrawLabyrinth}
+    If(-not $Global:DrawWhileBuilding){DrawLabyrinth}
 })
 
-InitLabyrinth
-#CreateLabyrinth
-#SolveLabyrinth
 [void][System.Windows.Forms.Application]::Run($FrmLabyrinthian)
