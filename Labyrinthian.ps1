@@ -21,7 +21,7 @@ $global:brushlc = New-Object Drawing.SolidBrush WhiteSmoke
 $global:brushPlayer = New-Object Drawing.SolidBrush Red
 
 #Global settings
-$Global:DrawWhileBuilding = $false
+$Global:DrawWhileBuilding = $true
 $Global:DrawWhileSearching = $true
 $global:PlayerPause = 10
 $global:ClearLabBeforeSearching = $true
@@ -180,6 +180,7 @@ Function CreateLabyrinth () {
     [System.Collections.ArrayList]$moved = @()
     [System.Collections.ArrayList]$endpoints = @()
     If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
+    $previousmove = $null
     While($pointer -ge 0) {
         [System.Collections.ArrayList]$posDir = @()
         If ($y -gt 0) {
@@ -205,11 +206,17 @@ Function CreateLabyrinth () {
         #Random direction
         $numofposdir = $posdir.Count
         If ($numofposdir -ne 0) {
-            $movechoice = Get-Random -Minimum 0 -Maximum ($numofposdir)
-            $movedection = $posDir[$movechoice]
+            $movedetection = $posdir | Where-Object {$_ -eq $previousmove}
+            #$movedetection = $posdir[0]
+            If ($null -eq $movedetection) {
+                $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
+            } Elseif ((Get-Random -Minimum 0 -Maximum 4) -eq 0) {
+                $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
+            }
+            $previousmove = $movedetection[3]
             $value = $global:labyrinth[$x][$y]
             #deur gevonden
-            Switch($movedection[3]){
+            Switch($movedetection[3]){
                 'u' {$value+=1}
                 'd' {$value+=2}
                 'l' {$value+=4}
@@ -218,11 +225,11 @@ Function CreateLabyrinth () {
             $global:labyrinth[$x][$y] = $value
             $moved.Add(@($x,$y))
             $pointer=$moved.count
-            $x=$movedection[1]
-            $y=$movedection[2]
+            $x=$movedetection[1]
+            $y=$movedetection[2]
             #Deur naar de andere kant!
             $value = $global:labyrinth[$x][$y]
-            Switch($movedection[3]){
+            Switch($movedetection[3]){
                 'u' {$value+=2}
                 'd' {$value+=1}
                 'l' {$value+=8}
@@ -230,7 +237,7 @@ Function CreateLabyrinth () {
             }
             $global:labyrinth[$x][$y] = $value
             #Write-host "Step $pointer = Moved to $x $y"
-            $prgCalc.Value = $progress
+            #$prgCalc.Value = $progress
             If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
             $progress++
         } ElseIf ($pointer -gt $pointermax) {
@@ -399,11 +406,17 @@ Function SolveLabyrinth {
             $prgCalc.Value = $moves
         }
         If ($numofposdir -ne 0) {
+            $checkdir = $posdir | Where-Object {$_ -eq $Previousdirection}
+            If ($null -ne $checkdir) {
+                $movechoice = $checkdir
+                $direction = $Previousdirection
+            } Else {
                 #Random direction
-            $movechoice = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
-            #Directed direction
-            #$movechoice = $posDir[0]
-            $direction = $movechoice[2]
+                $movechoice = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
+                #Directed direction
+                #$movechoice = $posDir[0]
+                $direction = $movechoice[2]
+            }
             $global:labyrinth[$x][$y]-=($global:labyrinth[$x][$y] -band 240)
             Switch ($direction){
                 'u' {$global:labyrinth[$x][$y]+=16}
@@ -411,6 +424,7 @@ Function SolveLabyrinth {
                 'l' {$global:labyrinth[$x][$y]+=64}
                 'r' {$global:labyrinth[$x][$y]+=128}
             }
+            $Previousdirection = $direction
             If($Global:DrawWhileSearching){
                 $global:labyrinth[$x][$y]+= 1024
                 DrawExplorer -x $x -y $y
