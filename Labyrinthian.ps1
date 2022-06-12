@@ -2,13 +2,11 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName PresentationCore,PresentationFramework
 [System.Windows.Forms.Application]::EnableVisualStyles()
-
 $Global:FrmSizeX = 640
 $Global:FrmSizeY = 480
 #Initial labyrint width & Height
 $global:SizeX = 50
 $global:SizeY= 40
-
 #Global brushes
 $global:brushw = New-Object Drawing.SolidBrush White
 $global:brushbl = New-Object Drawing.SolidBrush Black
@@ -21,18 +19,19 @@ $global:brushlc = New-Object Drawing.SolidBrush WhiteSmoke
 $global:brushPlayer = New-Object Drawing.SolidBrush Red
 
 #Global settings
-$Global:DrawWhileBuilding = $true
+$Global:DrawWhileBuilding = $false
 $Global:DrawWhileSearching = $true
 $global:PlayerPause = 10
 $global:ClearLabBeforeSearching = $true
 $global:Randomness = 3
+$global:SearchAlgoritm = 'Straight'
 
 Clear-Host
 $FrmLabyrinthian                            = New-Object system.Windows.Forms.Form
 $FrmLabyrinthian.ClientSize                 = "$Global:FrmSizeX,$Global:FrmSizeY"
 $FrmLabyrinthian.text                       = "Labyrinth"
 $FrmLabyrinthian.TopMost                    = $true
-$FrmLabyrinthian.BackColor                  = "#888888"
+$FrmLabyrinthian.BackColor                  = '#808080'
 $FrmLabyrinthian.StartPosition = 'Manual'
 $FrmLabyrinthian.Location                    = New-Object System.Drawing.Point(0,0)
 #$FrmLabyrinthian.TransparencyKey = "#808080"
@@ -44,7 +43,6 @@ $BtnCreateLabyrinth.height                  = 25
 $BtnCreateLabyrinth.location                = New-Object System.Drawing.Point(0,0)
 $BtnCreateLabyrinth.Font                    = 'Microsoft Sans Serif,10'
 $BtnCreateLabyrinth.BackColor               = "#999999"
-
 $BtnSolveLabyrinth                         = New-Object system.Windows.Forms.Button
 $BtnSolveLabyrinth.text                    = "Solve"
 $BtnSolveLabyrinth.width                   = 75
@@ -53,7 +51,6 @@ $BtnSolveLabyrinth.location                = New-Object System.Drawing.Point(75,
 $BtnSolveLabyrinth.Font                    = 'Microsoft Sans Serif,10'
 $BtnSolveLabyrinth.BackColor               = "#999999"
 $BtnSolveLabyrinth.Enabled = $false
-
 $BtnSettings                         = New-Object system.Windows.Forms.Button
 $BtnSettings.text                    = "Settings"
 $BtnSettings.width                   = 75
@@ -62,13 +59,11 @@ $BtnSettings.location                = New-Object System.Drawing.Point(150,0)
 $BtnSettings.Font                    = 'Microsoft Sans Serif,10'
 $BtnSettings.BackColor               = "#999999"
 $BtnSettings.Enabled = $true
-
 $prgCalc = New-object System.Windows.Forms.ProgressBar
 $prgCalc.Width = $FrmLabyrinthian.width-225
 $prgCalc.Height = 20
 $prgcalc.value = 0
 $prgcalc.Location = New-Object System.Drawing.Point(225,0)
-
 #settings controls
 $chkDrawLab = New-Object System.Windows.Forms.Checkbox
 $chkDrawLab.AutoSize = $true
@@ -76,14 +71,12 @@ $chkDrawLab.Width = 25
 $chkDrawLab.Height = 25
 $chkDrawLab.Text = "Draw while building"
 $chkDrawLab.Location = New-Object System.Drawing.Point(10,10)
-
 $chkDrawSol = New-Object System.Windows.Forms.Checkbox
 $chkDrawSol.AutoSize = $true
 $chkDrawSol.Width = 25
 $chkDrawSol.Height = 25
 $chkDrawSol.Text = "Draw while solving"
 $chkDrawSol.Location = New-Object System.Drawing.Point(10,30)
-
 $sldWidth = New-Object System.Windows.Forms.Trackbar
 $sldwidth.AutoSize = $true
 $sldwidth.Text = "Width"
@@ -96,20 +89,17 @@ $sldwidth.AutoSize = $True
 $sldwidth.TickStyle = 2
 $sldwidth.TickFrequency = 10
 $sldWidth.Orientation = 0
-
 $sldwidthNum = New-Object System.Windows.Forms.NumericUpDown
 $sldwidthNum.width = 45
 $sldwidthNum.Height = 30
 $sldwidthNum.Location = New-Object System.Drawing.Point(210,60)
 $sldwidthNum.Maximum = 200
 $sldwidthNum.Minimum = 5
-
 $lblWidth = New-Object System.Windows.Forms.Label
 $lblWidth.width = 50
 $lblWidth.height =30
 $lblWidth.location = New-object System.Drawing.Point(260,60)
 $lblWidth.Text = "Width"
-
 $sldHeight = New-Object System.Windows.Forms.Trackbar
 $sldHeight.AutoSize = $true
 $sldHeight.Text = "Height"
@@ -121,20 +111,17 @@ $sldHeight.Minimum = 5
 $sldHeight.TickFrequency = 10
 $sldHeight.TickStyle = 2
 $sldHeight.Orientation = 0
-
 $sldHeightNum = New-Object System.Windows.Forms.NumericUpDown
 $sldHeightNum.width = 45
 $sldHeightNum.Height = 25
 $sldHeightNum.Location = New-Object System.Drawing.Point(210,100)
 $sldHeightNum.Maximum = 150
 $sldHeightNum.Minimum =5
-
 $lblHeight = New-Object System.Windows.Forms.Label
 $lblHeight.width = 50
 $lblHeight.height =30
 $lblHeight.location = New-object System.Drawing.Point(260,100)
 $lblHeight.Text = "Height"
-
 $sldSpeed = New-Object System.Windows.Forms.Trackbar
 $sldSpeed.AutoSize = $true
 $sldSpeed.Text = "Speed"
@@ -146,20 +133,17 @@ $sldSpeed.Minimum = 0
 $sldSpeed.TickFrequency = 10
 $sldSpeed.TickStyle = 2
 $sldSpeed.Orientation = 0
-
 $sldSpeedNum = New-Object System.Windows.Forms.NumericUpDown
 $sldSpeedNum.width = 45
 $sldSpeedNum.Height = 25
 $sldSpeedNum.Location = New-Object System.Drawing.Point(210,150)
 $sldSpeedNum.Maximum = 250
 $sldSpeedNum.Minimum =0
-
 $lblSpeed = New-Object System.Windows.Forms.Label
 $lblSpeed.width = 50
 $lblSpeed.height =30
 $lblSpeed.location = New-object System.Drawing.Point(260,150)
 $lblSpeed.Text = "Speed"
-
 $sldRandom = New-Object System.Windows.Forms.Trackbar
 $sldRandom.AutoSize = $true
 $sldRandom.Text = "Randomness"
@@ -167,7 +151,7 @@ $sldRandom.width = 200
 $sldRandom.Height = 30
 $sldRandom.location = New-Object System.Drawing.Point(10,200)
 $sldRandom.Maximum = 100
-$sldRandom.Minimum = 0
+$sldRandom.Minimum = 1
 $sldRandom.TickFrequency = 10
 $sldRandom.TickStyle = 2
 $sldRandom.Orientation = 0
@@ -177,7 +161,7 @@ $sldRandomNum.width = 45
 $sldRandomNum.Height = 25
 $sldRandomNum.Location = New-Object System.Drawing.Point(210,200)
 $sldRandomNum.Maximum = 100
-$sldRandomNum.Minimum =0
+$sldRandomNum.Minimum = 1
 
 $lblRandom = New-Object System.Windows.Forms.Label
 $lblRandom.width = 50
@@ -185,25 +169,50 @@ $lblRandom.height =30
 $lblRandom.location = New-object System.Drawing.Point(260,200)
 $lblRandom.Text = "Randomness"
 
-$FrmLabyrinthian.controls.AddRange(@($BtnCreateLabyrinth,$BtnSolveLabyrinth,$BtnSettings,$prgCalc))
+$btnOk = New-Object System.Windows.Forms.Button
+$btnOk.Height = 30
+$btnok.width = 100
+$btnOk.AutoSize = $true
+$btnOk.Location = New-object System.Drawing.Point(10,360)
+$btnOk.Text = "Ok"
+
+$btnApply = New-Object System.Windows.Forms.Button
+$btnApply.Width = 100
+$btnApply.Height = 30
+$btnApply.AutoSize = $true
+$btnApply.Location = New-object System.Drawing.Point(150,360)
+$btnApply.Text = "Apply"
+
+$btnCancel = New-Object System.Windows.Forms.Button
+$btnCancel.Width = 100
+$btnCancel.Height = 30
+$btnCancel.AutoSize = $true
+$btnCancel.Location = New-object System.Drawing.Point(290,360)
+$btnCancel.Text = "Cancel"
+
+$FrmLabyrinthian.controls.AddRange(@(
+    $BtnCreateLabyrinth,$BtnSolveLabyrinth,$BtnSettings,$prgCalc
+))
 $FrmLabyrinthianSettings = New-Object system.Windows.Forms.Form
+$FrmLabyrinthianSettings.BackColor                  = '#d3d3d3'
+$FrmLabyrinthianSettings.StartPosition              = 'Manual'
 $FrmLabyrinthianSettings.controls.AddRange(@(
     $chkDrawLab,$chkDrawSol,
     $sldWidth,$sldwidthNum,$lblWidth,
     $sldHeight,$sldHeightNum,$lblHeight,
     $sldSpeed,$sldSpeedNum,$lblSpeed,
-    $sldRandom,$sldRandomNum,$lblRandom
-    ))
+    $sldRandom,$sldRandomNum,$lblRandom,
+    $btnok,$btnApply,$btnCancel
+))
 
 Function ShowSettings(){
     $FrmLabyrinthianSettings.ClientSize                 = "400,400"
     $FrmLabyrinthianSettings.text                       = "Labyrinth settings"
     $FrmLabyrinthianSettings.TopMost                    = $true
-    #$FrmLabyrinthianSettings.BackColor                  = 'LightGrey'
-    #$FrmLabyrinthianSettings.StartPosition              = 'Manual'
 
     $chkDrawSol.Checked = $Global:DrawWhileSearching
     $chkDrawLab.Checked = $Global:DrawWhileBuilding
+
     $sldWidth.Value = $global:SizeX
     $sldwidthNum.value= $global:SizeX
     $sldHeight.Value = $global:SizeY
@@ -212,7 +221,6 @@ Function ShowSettings(){
     $sldSpeedNum.value = $global:PlayerPause
     $sldRandom.Value = $global:Randomness
     $sldRandomNum.Value = $global:Randomness
-
     $FrmLabyrinthianSettings.StartPosition = 'CenterParent'
     $FrmLabyrinthianSettings.ShowDialog()
 }
@@ -289,7 +297,7 @@ Function CreateLabyrinth () {
             }
             $global:labyrinth[$x][$y] = $value
             #Write-host "Step $pointer = Moved to $x $y"
-            #$prgCalc.Value = $progress
+            $prgCalc.Value = $progress
             If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
             $progress++
         } ElseIf ($pointer -gt $pointermax) {
@@ -335,7 +343,6 @@ Function DrawExplorer {
         $y,
         [ValidateSet("NoDraw", "Draw","Raider")]$marker = 'Draw' 
     )
-
     $offsetx = 25
     $offsety = 25
     $ScaleX = (($FrmLabyrinthian.Width-($offsetx*2))/ $global:SizeX)
@@ -413,7 +420,6 @@ Function DrawExplorer {
     }
     [System.Windows.Forms.Application]::DoEvents()
 }
-
 Function DrawLabyrinth {    
     Param ()
     For($y=0;$y -lt  $global:SizeY;$y++) { 
@@ -423,7 +429,6 @@ Function DrawLabyrinth {
     }   
     $FrmLabyrinthian.Update()
 }
-
 Function SolveLabyrinth {
     Param ()
     #Clear breadcrumbs
@@ -524,41 +529,39 @@ Function SolveLabyrinth {
     If(-not $Global:DrawWhileSearching){DrawLabyrinth}
     Write-Host "moves: $moves"
 }
+Function SaveSettings {
+    $Global:DrawWhileBuilding = $chkDrawLab.Checked
+    $Global:DrawWhileSearching = $chkDrawSol.Checked
+    $global:SizeX = $sldWidth.Value
+    $global:SizeY = $sldHeight.Value
+    $global:PlayerPause = $sldSpeed.Value
+    $BtnSolveLabyrinth.Enabled=$false
+    $global:Randomness = $sldRandom.Value
+}
+
 function ChangeSizeX () {
     $sldwidthNum.Value = $sldWidth.Value
-    $global:SizeX = $sldWidth.Value
-    $BtnSolveLabyrinth.Enabled=$false
 }
 function ChangeSizeY () {
     $sldHeightNum.Value = $sldHeight.Value
-    $global:SizeY = $sldHeight.Value
-    $BtnSolveLabyrinth.Enabled=$false
-}
+ }
 function ChangeSizeXNum () {
     $sldWidth.Value = $sldWidthNum.Value 
-    $global:SizeX = $sldWidth.Value
-    $BtnSolveLabyrinth.Enabled=$false
 }
 function ChangeSizeYNum () {
     $sldHeight.Value = $sldHeightNum.Value 
-    $global:SizeY = $sldHeight.Value
-    $BtnSolveLabyrinth.Enabled=$false
 }
 function ChangeSpeed () {
     $sldSpeedNum.Value = $sldSpeed.Value
-    $global:PlayerPause = $sldSpeed.Value
 }
 function ChangeSpeedNum () {
     $sldSpeed.Value = $sldSpeedNum.Value 
-    $global:PlayerPause = $sldSpeed.Value
 }
 function ChangeRandom () {
     $sldRandomNum.Value = $sldRandom.Value
-    $global:Randomness = $sldRandom.Value
 }
 function ChangeRandomNum () {
     $sldRandom.Value = $sldRandomNum.Value 
-    $global:Randomness = $sldRandom.Value
 }
 
 $BtnCreateLabyrinth.Add_Click({
@@ -569,8 +572,6 @@ $BtnCreateLabyrinth.Add_Click({
 })
 $BtnSolveLabyrinth.Add_Click({ SolveLabyrinth })
 $BtnSettings.Add_Click({ ShowSettings })
-$chkDrawLab.Add_CheckedChanged({$Global:DrawWhileBuilding = $chkDrawLab.Checked})
-$chkDrawSol.Add_CheckedChanged({$Global:DrawWhileSearching = $chkDrawSol.Checked})
 $sldWidth.Add_Scroll({ ChangeSizeX })
 $sldwidthNum.Add_ValueChanged({ChangeSizeXNum})
 $sldHeight.Add_Scroll({ ChangeSizeY })
@@ -579,6 +580,7 @@ $sldSpeed.Add_Scroll({ ChangeSpeed })
 $sldSpeedNum.Add_ValueChanged({ChangeSpeedNum})
 $sldRandom.Add_Scroll({ ChangeRandom })
 $sldRandomNum.Add_ValueChanged({ChangeRandomNum})
+
 $FrmLabyrinthian.Add_ResizeEnd({ClearLabyrinth;DrawLabyrinth;$prgCalc.width=$FrmLabyrinthian.width-225})
 $FrmLabyrinthian.Add_SizeChanged({
     If ($FrmLabyrinthian.WindowState -ne 'Normal' -or $global:PreviousState -ne 'Normal') {
@@ -586,10 +588,19 @@ $FrmLabyrinthian.Add_SizeChanged({
         $global:PreviousState = $FrmLabyrinthian.WindowState
     }
 })
+$btnOk.Add_Click({
+    SaveSettings
+    $FrmLabyrinthianSettings.Close()
+})
+$btnApply.Add_Click({
+    SaveSettings
+})
+$btnCancel.Add_Click({
+    $FrmLabyrinthianSettings.Close()
+})
 $FrmLabyrinthian.Add_Shown({
     InitLabyrinth
     CreateLabyrinth
     If(-not $Global:DrawWhileBuilding){DrawLabyrinth}
 })
-
 [void][System.Windows.Forms.Application]::Run($FrmLabyrinthian)
