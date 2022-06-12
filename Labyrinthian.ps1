@@ -21,10 +21,11 @@ $global:brushlc = New-Object Drawing.SolidBrush WhiteSmoke
 $global:brushPlayer = New-Object Drawing.SolidBrush Red
 
 #Global settings
-$Global:DrawWhileBuilding = $false
+$Global:DrawWhileBuilding = $true
 $Global:DrawWhileSearching = $true
 $global:PlayerPause = 10
 $global:ClearLabBeforeSearching = $true
+$global:Randomness = 3
 
 Clear-Host
 $FrmLabyrinthian                            = New-Object system.Windows.Forms.Form
@@ -68,6 +69,7 @@ $prgCalc.Height = 20
 $prgcalc.value = 0
 $prgcalc.Location = New-Object System.Drawing.Point(225,0)
 
+#settings controls
 $chkDrawLab = New-Object System.Windows.Forms.Checkbox
 $chkDrawLab.AutoSize = $true
 $chkDrawLab.Width = 25
@@ -102,6 +104,12 @@ $sldwidthNum.Location = New-Object System.Drawing.Point(210,60)
 $sldwidthNum.Maximum = 200
 $sldwidthNum.Minimum = 5
 
+$lblWidth = New-Object System.Windows.Forms.Label
+$lblWidth.width = 50
+$lblWidth.height =30
+$lblWidth.location = New-object System.Drawing.Point(260,60)
+$lblWidth.Text = "Width"
+
 $sldHeight = New-Object System.Windows.Forms.Trackbar
 $sldHeight.AutoSize = $true
 $sldHeight.Text = "Height"
@@ -120,6 +128,12 @@ $sldHeightNum.Height = 25
 $sldHeightNum.Location = New-Object System.Drawing.Point(210,100)
 $sldHeightNum.Maximum = 150
 $sldHeightNum.Minimum =5
+
+$lblHeight = New-Object System.Windows.Forms.Label
+$lblHeight.width = 50
+$lblHeight.height =30
+$lblHeight.location = New-object System.Drawing.Point(260,100)
+$lblHeight.Text = "Height"
 
 $sldSpeed = New-Object System.Windows.Forms.Trackbar
 $sldSpeed.AutoSize = $true
@@ -140,9 +154,46 @@ $sldSpeedNum.Location = New-Object System.Drawing.Point(210,150)
 $sldSpeedNum.Maximum = 250
 $sldSpeedNum.Minimum =0
 
+$lblSpeed = New-Object System.Windows.Forms.Label
+$lblSpeed.width = 50
+$lblSpeed.height =30
+$lblSpeed.location = New-object System.Drawing.Point(260,150)
+$lblSpeed.Text = "Speed"
+
+$sldRandom = New-Object System.Windows.Forms.Trackbar
+$sldRandom.AutoSize = $true
+$sldRandom.Text = "Randomness"
+$sldRandom.width = 200
+$sldRandom.Height = 30
+$sldRandom.location = New-Object System.Drawing.Point(10,200)
+$sldRandom.Maximum = 100
+$sldRandom.Minimum = 0
+$sldRandom.TickFrequency = 10
+$sldRandom.TickStyle = 2
+$sldRandom.Orientation = 0
+
+$sldRandomNum = New-Object System.Windows.Forms.NumericUpDown
+$sldRandomNum.width = 45
+$sldRandomNum.Height = 25
+$sldRandomNum.Location = New-Object System.Drawing.Point(210,200)
+$sldRandomNum.Maximum = 100
+$sldRandomNum.Minimum =0
+
+$lblRandom = New-Object System.Windows.Forms.Label
+$lblRandom.width = 50
+$lblRandom.height =30
+$lblRandom.location = New-object System.Drawing.Point(260,200)
+$lblRandom.Text = "Randomness"
+
 $FrmLabyrinthian.controls.AddRange(@($BtnCreateLabyrinth,$BtnSolveLabyrinth,$BtnSettings,$prgCalc))
 $FrmLabyrinthianSettings = New-Object system.Windows.Forms.Form
-$FrmLabyrinthianSettings.controls.AddRange(@($chkDrawLab,$chkDrawSol,$sldWidth,$sldwidthNum,$sldHeight,$sldHeightNum,$sldSpeed,$sldSpeedNum))
+$FrmLabyrinthianSettings.controls.AddRange(@(
+    $chkDrawLab,$chkDrawSol,
+    $sldWidth,$sldwidthNum,$lblWidth,
+    $sldHeight,$sldHeightNum,$lblHeight,
+    $sldSpeed,$sldSpeedNum,$lblSpeed,
+    $sldRandom,$sldRandomNum,$lblRandom
+    ))
 
 Function ShowSettings(){
     $FrmLabyrinthianSettings.ClientSize                 = "400,400"
@@ -150,7 +201,6 @@ Function ShowSettings(){
     $FrmLabyrinthianSettings.TopMost                    = $true
     #$FrmLabyrinthianSettings.BackColor                  = 'LightGrey'
     #$FrmLabyrinthianSettings.StartPosition              = 'Manual'
-
 
     $chkDrawSol.Checked = $Global:DrawWhileSearching
     $chkDrawLab.Checked = $Global:DrawWhileBuilding
@@ -160,6 +210,8 @@ Function ShowSettings(){
     $sldHeightNum.value = $global:SizeY
     $sldSpeed.Value = $global:PlayerPause
     $sldSpeedNum.value = $global:PlayerPause
+    $sldRandom.Value = $global:Randomness
+    $sldRandomNum.Value = $global:Randomness
 
     $FrmLabyrinthianSettings.StartPosition = 'CenterParent'
     $FrmLabyrinthianSettings.ShowDialog()
@@ -180,6 +232,7 @@ Function CreateLabyrinth () {
     [System.Collections.ArrayList]$moved = @()
     [System.Collections.ArrayList]$endpoints = @()
     If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
+    $previousmove = $null
     While($pointer -ge 0) {
         [System.Collections.ArrayList]$posDir = @()
         If ($y -gt 0) {
@@ -205,11 +258,17 @@ Function CreateLabyrinth () {
         #Random direction
         $numofposdir = $posdir.Count
         If ($numofposdir -ne 0) {
-            $movechoice = Get-Random -Minimum 0 -Maximum ($numofposdir)
-            $movedection = $posDir[$movechoice]
+            $movedetection = $posdir | Where-Object {$_ -eq $previousmove}
+            #$movedetection = $posdir[0]
+            If ($null -eq $movedetection) {
+                $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
+            } Elseif ((Get-Random -Minimum 0 -Maximum $global:Randomness) -eq 0) {
+                $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
+            }
+            $previousmove = $movedetection[3]
             $value = $global:labyrinth[$x][$y]
             #deur gevonden
-            Switch($movedection[3]){
+            Switch($movedetection[3]){
                 'u' {$value+=1}
                 'd' {$value+=2}
                 'l' {$value+=4}
@@ -218,11 +277,11 @@ Function CreateLabyrinth () {
             $global:labyrinth[$x][$y] = $value
             $moved.Add(@($x,$y))
             $pointer=$moved.count
-            $x=$movedection[1]
-            $y=$movedection[2]
+            $x=$movedetection[1]
+            $y=$movedetection[2]
             #Deur naar de andere kant!
             $value = $global:labyrinth[$x][$y]
-            Switch($movedection[3]){
+            Switch($movedetection[3]){
                 'u' {$value+=2}
                 'd' {$value+=1}
                 'l' {$value+=8}
@@ -230,7 +289,7 @@ Function CreateLabyrinth () {
             }
             $global:labyrinth[$x][$y] = $value
             #Write-host "Step $pointer = Moved to $x $y"
-            $prgCalc.Value = $progress
+            #$prgCalc.Value = $progress
             If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
             $progress++
         } ElseIf ($pointer -gt $pointermax) {
@@ -247,7 +306,8 @@ Function CreateLabyrinth () {
     $endpoint=$endpoints[(Get-Random -Minimum 0 -Maximum $endpoints.Count)]
     $global:labyrinth[$endpoint[0]][$endpoint[1]] = 512 #finish
     $Global:Finish=@($endpoint[0],$endpoint[1])
-    If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
+    If($Global:DrawWhileBuilding){DrawExplorer -x $endpoint[0] -y $endpoint[1]}
+    $Global:FirstSolve = $true
 }
 Function InitLabyrinth(){
     #Draw stuff prep
@@ -376,7 +436,8 @@ Function SolveLabyrinth {
         }
     }
     #ClearLabyrinth
-    If ($global:ClearLabBeforeSearching) {DrawLabyrinth}
+    If ($global:ClearLabBeforeSearching -and -not $Global:FirstSolve) {DrawLabyrinth}
+    $Global:FirstSolve = $false
     #Write-host "$global:start $global:finish"
     $x =$global:start[0]
     $y =$global:start[1]
@@ -399,11 +460,17 @@ Function SolveLabyrinth {
             $prgCalc.Value = $moves
         }
         If ($numofposdir -ne 0) {
+            $checkdir = $posdir | Where-Object {$_ -eq $Previousdirection}
+            If ($null -ne $checkdir) {
+                $movechoice = $checkdir
+                $direction = $Previousdirection
+            } Else {
                 #Random direction
-            $movechoice = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
-            #Directed direction
-            #$movechoice = $posDir[0]
-            $direction = $movechoice[2]
+                $movechoice = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
+                #Directed direction
+                #$movechoice = $posDir[0]
+                $direction = $movechoice[2]
+            }
             $global:labyrinth[$x][$y]-=($global:labyrinth[$x][$y] -band 240)
             Switch ($direction){
                 'u' {$global:labyrinth[$x][$y]+=16}
@@ -411,6 +478,7 @@ Function SolveLabyrinth {
                 'l' {$global:labyrinth[$x][$y]+=64}
                 'r' {$global:labyrinth[$x][$y]+=128}
             }
+            $Previousdirection = $direction
             If($Global:DrawWhileSearching){
                 $global:labyrinth[$x][$y]+= 1024
                 DrawExplorer -x $x -y $y
@@ -466,10 +534,6 @@ function ChangeSizeY () {
     $global:SizeY = $sldHeight.Value
     $BtnSolveLabyrinth.Enabled=$false
 }
-function ChangeSpeed () {
-    $sldSpeedNum.Value = $sldSpeed.Value
-    $global:PlayerPause = $sldSpeed.Value
-}
 function ChangeSizeXNum () {
     $sldWidth.Value = $sldWidthNum.Value 
     $global:SizeX = $sldWidth.Value
@@ -480,10 +544,23 @@ function ChangeSizeYNum () {
     $global:SizeY = $sldHeight.Value
     $BtnSolveLabyrinth.Enabled=$false
 }
+function ChangeSpeed () {
+    $sldSpeedNum.Value = $sldSpeed.Value
+    $global:PlayerPause = $sldSpeed.Value
+}
 function ChangeSpeedNum () {
     $sldSpeed.Value = $sldSpeedNum.Value 
     $global:PlayerPause = $sldSpeed.Value
 }
+function ChangeRandom () {
+    $sldRandomNum.Value = $sldRandom.Value
+    $global:Randomness = $sldRandom.Value
+}
+function ChangeRandomNum () {
+    $sldRandom.Value = $sldRandomNum.Value 
+    $global:Randomness = $sldRandom.Value
+}
+
 
 $BtnCreateLabyrinth.Add_Click({
     InitLabyrinth
@@ -496,11 +573,13 @@ $BtnSettings.Add_Click({ ShowSettings })
 $chkDrawLab.Add_CheckedChanged({$Global:DrawWhileBuilding = $chkDrawLab.Checked})
 $chkDrawSol.Add_CheckedChanged({$Global:DrawWhileSearching = $chkDrawSol.Checked})
 $sldWidth.Add_Scroll({ ChangeSizeX })
-$sldHeight.Add_Scroll({ ChangeSizeY })
-$sldSpeed.Add_Scroll({ ChangeSpeed })
 $sldwidthNum.Add_ValueChanged({ChangeSizeXNum})
+$sldHeight.Add_Scroll({ ChangeSizeY })
 $sldHeightNum.Add_ValueChanged({ChangeSizeYNum})
+$sldSpeed.Add_Scroll({ ChangeSpeed })
 $sldSpeedNum.Add_ValueChanged({ChangeSpeedNum})
+$sldRandom.Add_Scroll({ ChangeRandom })
+$sldRandomNum.Add_ValueChanged({ChangeRandomNum})
 $FrmLabyrinthian.Add_ResizeEnd({ClearLabyrinth;DrawLabyrinth;$prgCalc.width=$FrmLabyrinthian.width-225})
 $FrmLabyrinthian.Add_SizeChanged({
     If ($FrmLabyrinthian.WindowState -ne 'Normal' -or $global:PreviousState -ne 'Normal') {
