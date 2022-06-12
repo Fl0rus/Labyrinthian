@@ -561,7 +561,6 @@ function ChangeRandomNum () {
     $global:Randomness = $sldRandom.Value
 }
 
-
 $BtnCreateLabyrinth.Add_Click({
     InitLabyrinth
     ClearLabyrinth
