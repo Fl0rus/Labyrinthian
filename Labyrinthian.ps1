@@ -24,7 +24,10 @@ $Global:DrawWhileSearching = $true
 $global:PlayerPause = 10
 $global:ClearLabBeforeSearching = $true
 $global:Randomness = 3
-$global:SearchAlgoritm = 'Straight'
+$global:SearchAlgoritms =@('Straight Random','Straight Fixed','Random','Fixed','Radar')
+$global:SearchAlgoritm = 'Straight Random'
+$global:moves = '-'
+
 
 Clear-Host
 $FrmLabyrinthian                            = New-Object system.Windows.Forms.Form
@@ -43,6 +46,7 @@ $BtnCreateLabyrinth.height                  = 25
 $BtnCreateLabyrinth.location                = New-Object System.Drawing.Point(0,0)
 $BtnCreateLabyrinth.Font                    = 'Microsoft Sans Serif,10'
 $BtnCreateLabyrinth.BackColor               = "#999999"
+
 $BtnSolveLabyrinth                         = New-Object system.Windows.Forms.Button
 $BtnSolveLabyrinth.text                    = "Solve"
 $BtnSolveLabyrinth.width                   = 75
@@ -51,6 +55,7 @@ $BtnSolveLabyrinth.location                = New-Object System.Drawing.Point(75,
 $BtnSolveLabyrinth.Font                    = 'Microsoft Sans Serif,10'
 $BtnSolveLabyrinth.BackColor               = "#999999"
 $BtnSolveLabyrinth.Enabled = $false
+
 $BtnSettings                         = New-Object system.Windows.Forms.Button
 $BtnSettings.text                    = "Settings"
 $BtnSettings.width                   = 75
@@ -59,11 +64,22 @@ $BtnSettings.location                = New-Object System.Drawing.Point(150,0)
 $BtnSettings.Font                    = 'Microsoft Sans Serif,10'
 $BtnSettings.BackColor               = "#999999"
 $BtnSettings.Enabled = $true
+
 $prgCalc = New-object System.Windows.Forms.ProgressBar
-$prgCalc.Width = $FrmLabyrinthian.width-225
+$prgCalc.Width = $FrmLabyrinthian.width-175
 $prgCalc.Height = 20
 $prgcalc.value = 0
-$prgcalc.Location = New-Object System.Drawing.Point(225,0)
+$prgcalc.Location = New-Object System.Drawing.Point(275,0)
+$prgCalc.Text = $global:SearchAlgoritm
+
+$lblCalc = New-Object System.Windows.Forms.Label
+$lblCalc.Width = 50
+$lblCalc.Height = 25
+$lblCalc.TextAlign = 32
+$lblCalc.Location = New-Object System.Drawing.Point(225,0)
+$lblCalc.Text = $global:SearchAlgoritm
+#$lblCalc.BackColor = 'Transparant'
+
 #settings controls
 $chkDrawLab = New-Object System.Windows.Forms.Checkbox
 $chkDrawLab.AutoSize = $true
@@ -71,12 +87,14 @@ $chkDrawLab.Width = 25
 $chkDrawLab.Height = 25
 $chkDrawLab.Text = "Draw while building"
 $chkDrawLab.Location = New-Object System.Drawing.Point(10,10)
+
 $chkDrawSol = New-Object System.Windows.Forms.Checkbox
 $chkDrawSol.AutoSize = $true
 $chkDrawSol.Width = 25
 $chkDrawSol.Height = 25
 $chkDrawSol.Text = "Draw while solving"
 $chkDrawSol.Location = New-Object System.Drawing.Point(10,30)
+
 $sldWidth = New-Object System.Windows.Forms.Trackbar
 $sldwidth.AutoSize = $true
 $sldwidth.Text = "Width"
@@ -89,17 +107,20 @@ $sldwidth.AutoSize = $True
 $sldwidth.TickStyle = 2
 $sldwidth.TickFrequency = 10
 $sldWidth.Orientation = 0
+
 $sldwidthNum = New-Object System.Windows.Forms.NumericUpDown
 $sldwidthNum.width = 45
 $sldwidthNum.Height = 30
 $sldwidthNum.Location = New-Object System.Drawing.Point(210,60)
 $sldwidthNum.Maximum = 200
 $sldwidthNum.Minimum = 5
+
 $lblWidth = New-Object System.Windows.Forms.Label
 $lblWidth.width = 50
 $lblWidth.height =30
 $lblWidth.location = New-object System.Drawing.Point(260,60)
 $lblWidth.Text = "Width"
+
 $sldHeight = New-Object System.Windows.Forms.Trackbar
 $sldHeight.AutoSize = $true
 $sldHeight.Text = "Height"
@@ -111,17 +132,20 @@ $sldHeight.Minimum = 5
 $sldHeight.TickFrequency = 10
 $sldHeight.TickStyle = 2
 $sldHeight.Orientation = 0
+
 $sldHeightNum = New-Object System.Windows.Forms.NumericUpDown
 $sldHeightNum.width = 45
 $sldHeightNum.Height = 25
 $sldHeightNum.Location = New-Object System.Drawing.Point(210,100)
 $sldHeightNum.Maximum = 150
 $sldHeightNum.Minimum =5
+
 $lblHeight = New-Object System.Windows.Forms.Label
 $lblHeight.width = 50
 $lblHeight.height =30
 $lblHeight.location = New-object System.Drawing.Point(260,100)
 $lblHeight.Text = "Height"
+
 $sldSpeed = New-Object System.Windows.Forms.Trackbar
 $sldSpeed.AutoSize = $true
 $sldSpeed.Text = "Speed"
@@ -133,17 +157,20 @@ $sldSpeed.Minimum = 0
 $sldSpeed.TickFrequency = 10
 $sldSpeed.TickStyle = 2
 $sldSpeed.Orientation = 0
+
 $sldSpeedNum = New-Object System.Windows.Forms.NumericUpDown
 $sldSpeedNum.width = 45
 $sldSpeedNum.Height = 25
 $sldSpeedNum.Location = New-Object System.Drawing.Point(210,150)
 $sldSpeedNum.Maximum = 250
 $sldSpeedNum.Minimum =0
+
 $lblSpeed = New-Object System.Windows.Forms.Label
 $lblSpeed.width = 50
 $lblSpeed.height =30
 $lblSpeed.location = New-object System.Drawing.Point(260,150)
 $lblSpeed.Text = "Speed"
+
 $sldRandom = New-Object System.Windows.Forms.Trackbar
 $sldRandom.AutoSize = $true
 $sldRandom.Text = "Randomness"
@@ -169,6 +196,16 @@ $lblRandom.height =30
 $lblRandom.location = New-object System.Drawing.Point(260,200)
 $lblRandom.Text = "Randomness"
 
+$cmbSearchAlgoritm = New-Object System.Windows.Forms.ComboBox
+$cmbSearchAlgoritm.Width = 100
+$cmbSearchAlgoritm.Height = 30
+$cmbSearchAlgoritm.AutoSize = $true
+$cmbSearchAlgoritm.DropDownStyle = 2
+$cmbSearchAlgoritm.AutoCompleteMode  = 0
+$cmbSearchAlgoritm.location = New-object System.Drawing.Point(10,250)
+$cmbSearchAlgoritm.DataSource = $global:SearchAlgoritms
+$cmbSearchAlgoritm.SelectedItem = 0
+
 $btnOk = New-Object System.Windows.Forms.Button
 $btnOk.Height = 30
 $btnok.width = 100
@@ -191,7 +228,7 @@ $btnCancel.Location = New-object System.Drawing.Point(290,360)
 $btnCancel.Text = "Cancel"
 
 $FrmLabyrinthian.controls.AddRange(@(
-    $BtnCreateLabyrinth,$BtnSolveLabyrinth,$BtnSettings,$prgCalc
+    $BtnCreateLabyrinth,$BtnSolveLabyrinth,$BtnSettings,$prgCalc,$lblCalc
 ))
 $FrmLabyrinthianSettings = New-Object system.Windows.Forms.Form
 $FrmLabyrinthianSettings.BackColor                  = '#d3d3d3'
@@ -202,6 +239,7 @@ $FrmLabyrinthianSettings.controls.AddRange(@(
     $sldHeight,$sldHeightNum,$lblHeight,
     $sldSpeed,$sldSpeedNum,$lblSpeed,
     $sldRandom,$sldRandomNum,$lblRandom,
+    $cmbSearchAlgoritm,
     $btnok,$btnApply,$btnCancel
 ))
 
@@ -221,9 +259,28 @@ Function ShowSettings(){
     $sldSpeedNum.value = $global:PlayerPause
     $sldRandom.Value = $global:Randomness
     $sldRandomNum.Value = $global:Randomness
+    $cmbSearchAlgoritm.SelectedItem = $global:SearchAlgoritmIndex
     $FrmLabyrinthianSettings.StartPosition = 'CenterParent'
     $FrmLabyrinthianSettings.ShowDialog()
 }
+Function SaveSettings {
+    $Global:DrawWhileBuilding = $chkDrawLab.Checked
+    $Global:DrawWhileSearching = $chkDrawSol.Checked
+    $global:PlayerPause = $sldSpeed.Value
+    If ($global:SizeX -ne $sldWidth.Value -or $global:SizeY -ne $sldHeight.Value) {
+        $global:SizeX = $sldWidth.Value
+        $global:SizeY = $sldHeight.Value
+        $BtnSolveLabyrinth.Enabled=$false
+    }
+    $global:Randomness = $sldRandom.Value
+    If ($global:SearchAlgoritm -ne $cmbSearchAlgoritm.SelectedValue) {
+        $global:SearchAlgoritm = $cmbSearchAlgoritm.SelectedValue
+        $global:SearchAlgoritmIndex = $cmbSearchAlgoritm.SelectedItem
+        $lblCalc.Text = $global:SearchAlgoritm
+        $global:moves = '-'
+    }
+}
+
 Function CreateLabyrinth () {
     #Fill labyrinth matrix array
     #ClearLabyrinth
@@ -448,9 +505,9 @@ Function SolveLabyrinth {
     $y =$global:start[1]
     $Progress=1
     $progressmax=1
-    $moves=0
+    $global:moves=0
     $maxmoves=($global:SizeX*$global:SizeY)
-    $prgCalc.Value =$moves
+    $prgCalc.Value =$global:moves
     $prgCalc.Maximum =$maxmoves
     [System.Collections.ArrayList]$moved=@()
     While (($global:labyrinth[$x][$y] -band 512) -ne 512) {
@@ -460,21 +517,35 @@ Function SolveLabyrinth {
         If (($global:labyrinth[$x][$y] -band 4) -eq 4 -and (($global:labyrinth[($x-1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x-1),$y,'l'))}
         If (($global:labyrinth[$x][$y] -band 8) -eq 8 -and (($global:labyrinth[($x+1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x+1),$y,'r'))}
         $numofposdir = $posdir.Count
-        If($Moves -lt $maxmoves) {
-            $Moves++
-            $prgCalc.Value = $moves
+        If($global:moves -lt $maxmoves) {
+            $global:moves++
+            $prgCalc.Value = $global:moves
         }
         If ($numofposdir -ne 0) {
-            $checkdir = $posdir | Where-Object {$_ -eq $Previousdirection}
-            If ($null -ne $checkdir) {
-                $movechoice = $checkdir
-                $direction = $Previousdirection
-            } Else {
-                #Random direction
-                $movechoice = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
-                #Directed direction
-                #$movechoice = $posDir[0]
-                $direction = $movechoice[2]
+            #Search Algoritms
+            $Algoritm = ($global:SearchAlgoritm -split ' ')[0]
+            If ($Algoritm -eq 'Straight') {
+                $checkdir = $posdir | Where-Object {$_ -eq $Previousdirection}
+                If ($null -ne $checkdir) {
+                    $movechoice = $checkdir
+                    $direction = $Previousdirection
+                } Else {
+                    $Algoritm = ($global:SearchAlgoritm -split ' ')[1]
+                }
+            }
+            Switch ($Algoritm) {
+                'Straight' {}
+                'Random' {
+                    $movechoice = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
+                    $direction = $movechoice[2]
+                }
+                'Fixed' {
+                    $movechoice = $posDir[0]
+                    $direction = $movechoice[2]
+                }
+                'Radar' {
+                    #Radar = Look over the hedges to see which direction
+                }
             }
             $global:labyrinth[$x][$y]-=($global:labyrinth[$x][$y] -band 240)
             Switch ($direction){
@@ -508,7 +579,7 @@ Function SolveLabyrinth {
             #Write-host "Deadend at $x $y"
         } Else {
             $Progress--
-            $Moves--
+            $global:moves--
             If (($global:labyrinth[$x][$y] -band 240) -ne 240) {
                 $global:labyrinth[$x][$y]+= 240 - ($global:labyrinth[$x][$y] -band 240)
                 If($Global:DrawWhileSearching){
@@ -527,18 +598,8 @@ Function SolveLabyrinth {
     #$global:labyrinth[$x][$y]-=64
     $prgCalc.Value = $maxmoves
     If(-not $Global:DrawWhileSearching){DrawLabyrinth}
-    Write-Host "moves: $moves"
+    Write-Host "$global:SearchAlgoritm - moves: $global:moves"
 }
-Function SaveSettings {
-    $Global:DrawWhileBuilding = $chkDrawLab.Checked
-    $Global:DrawWhileSearching = $chkDrawSol.Checked
-    $global:SizeX = $sldWidth.Value
-    $global:SizeY = $sldHeight.Value
-    $global:PlayerPause = $sldSpeed.Value
-    $BtnSolveLabyrinth.Enabled=$false
-    $global:Randomness = $sldRandom.Value
-}
-
 function ChangeSizeX () {
     $sldwidthNum.Value = $sldWidth.Value
 }
@@ -597,6 +658,11 @@ $btnApply.Add_Click({
 })
 $btnCancel.Add_Click({
     $FrmLabyrinthianSettings.Close()
+})
+$lblCalc.Add_Click({
+    $lblCalc.Text = $global:moves
+    Start-Sleep -Milliseconds 500
+    $lblCalc.Text = $global:SearchAlgoritm
 })
 $FrmLabyrinthian.Add_Shown({
     InitLabyrinth
