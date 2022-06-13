@@ -332,7 +332,6 @@ Function CreateLabyrinth () {
         $numofposdir = $posdir.Count
         If ($numofposdir -ne 0) {
             $movedetection = $posdir | Where-Object {$_ -eq $previousmove}
-            #$movedetection = $posdir[0]
             If ($null -eq $movedetection) {
                 $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
             } Elseif ((Get-Random -Minimum 0 -Maximum $global:Randomness) -eq 0) {
@@ -378,7 +377,7 @@ Function CreateLabyrinth () {
     $BtnSolveLabyrinth.Enabled = $true
     $endpoint=$endpoints[(Get-Random -Minimum 0 -Maximum $endpoints.Count)]
     $global:labyrinth[$endpoint[0]][$endpoint[1]] = 512 #finish
-    $Global:Finish=@($endpoint[0],$endpoint[1])
+    $global:Finish=@($endpoint[0],$endpoint[1])
     If($Global:DrawWhileBuilding){DrawExplorer -x $endpoint[0] -y $endpoint[1]}
     $Global:FirstSolve = $true
 }
@@ -553,6 +552,19 @@ Function SolveLabyrinth {
                 }
                 'Radar' {
                     #Radar = Look over the hedges to see which direction
+                    $difmin = $maxmoves
+                    For ($i=0;$i -lt $numofposdir;$i++) {
+                        $difx = [math]::abs(($posdir[$i])[0] - $global:Finish[0])
+                        $dify = [math]::abs(($posdir[$i])[1] - $global:Finish[1])
+                        $dif = $difx+$dify
+                        If($dif -lt $difmin) {
+                            $difmin = $dif
+                            $choice = $i
+                        }
+                    }
+                    #Write-Host "$difx - $dify - $dif - $difmin"
+                    $movechoice = $posDir[$choice]
+                    $direction = $movechoice[2]
                 }
             }
             $global:labyrinth[$x][$y]-=($global:labyrinth[$x][$y] -band 240)
