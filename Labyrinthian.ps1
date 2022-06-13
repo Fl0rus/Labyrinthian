@@ -338,35 +338,43 @@ Function CreateLabyrinth () {
                 $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
             }
             $previousmove = $movedetection[3]
-            $value = $global:labyrinth[$x][$y]
             #deur gevonden
             Switch($movedetection[3]){
-                'u' {$value+=1}
-                'd' {$value+=2}
-                'l' {$value+=4}
-                'r' {$value+=8}
+                'u' {$value=1}
+                'd' {$value=2}
+                'l' {$value=4}
+                'r' {$value=8}
             }
-            $global:labyrinth[$x][$y] = $value
+            $global:labyrinth[$x][$y] += $value
             $moved.Add(@($x,$y))
             $pointer=$moved.count
             $x=$movedetection[1]
             $y=$movedetection[2]
             #Deur naar de andere kant!
-            $value = $global:labyrinth[$x][$y]
             Switch($movedetection[3]){
-                'u' {$value+=2}
-                'd' {$value+=1}
-                'l' {$value+=8}
-                'r' {$value+=4}
+                'u' {$value=2}
+                'd' {$value=1}
+                'l' {$value=8}
+                'r' {$value=4}
             }
-            $global:labyrinth[$x][$y] = $value
+            $global:labyrinth[$x][$y] += $value
             #Write-host "Step $pointer = Moved to $x $y"
             $prgCalc.Value = $progress
             If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
             $progress++
         } ElseIf ($pointer -gt $pointermax) {
-           $pointermax=$pointer+1
-           $endpoints.Add(@($x,$y))
+            $pointermax=$pointer+1
+            $endpoints.Add(@($x,$y))
+            If (($x -lt $global:SizeX) -and ($x -gt 0) -and ($y -gt 0) -and ($y -lt $global:SizeY)){
+                Switch($previousmove){
+                    'u' {$value=1}
+                    'd' {$value=2}
+                    'l' {$value=4}
+                    'r' {$value=8}
+                }
+                $global:labyrinth[$x][$y] += $value
+                If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
+            }
         } Else {
             $pointer--
             $x = $moved[$pointer][0]
@@ -376,6 +384,7 @@ Function CreateLabyrinth () {
     }
     $BtnSolveLabyrinth.Enabled = $true
     $endpoint=$endpoints[(Get-Random -Minimum 0 -Maximum $endpoints.Count)]
+
     $global:labyrinth[$endpoint[0]][$endpoint[1]] = 512 #finish
     $global:Finish=@($endpoint[0],$endpoint[1])
     If($Global:DrawWhileBuilding){DrawExplorer -x $endpoint[0] -y $endpoint[1]}
