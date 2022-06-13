@@ -24,8 +24,8 @@ $Global:DrawWhileSearching = $true
 $global:PlayerPause = 10
 $global:ClearLabBeforeSearching = $true
 $global:Randomness = 3
-$global:SearchAlgoritms =@('Straight Random','Straight Fixed','Random','Fixed','Radar')
-$global:SearchAlgoritm = 'Straight Random'
+$global:SolveAlgoritms =@('Straight Random','Straight Fixed','Random','Fixed','Radar')
+$global:SolveAlgoritm = 'Straight Random'
 $global:moves = '-'
 
 
@@ -70,14 +70,14 @@ $prgCalc.Width = $FrmLabyrinthian.width-175
 $prgCalc.Height = 20
 $prgcalc.value = 0
 $prgcalc.Location = New-Object System.Drawing.Point(275,0)
-$prgCalc.Text = $global:SearchAlgoritm
+$prgCalc.Text = $global:SolveAlgoritm
 
 $lblCalc = New-Object System.Windows.Forms.Label
 $lblCalc.Width = 50
 $lblCalc.Height = 25
-$lblCalc.TextAlign = 32
+$lblCalc.TextAlign = 32 #MiddleCenter
 $lblCalc.Location = New-Object System.Drawing.Point(225,0)
-$lblCalc.Text = $global:SearchAlgoritm
+$lblCalc.Text = $global:SolveAlgoritm
 #$lblCalc.BackColor = 'Transparant'
 
 #settings controls
@@ -196,15 +196,23 @@ $lblRandom.height =30
 $lblRandom.location = New-object System.Drawing.Point(260,200)
 $lblRandom.Text = "Randomness"
 
-$cmbSearchAlgoritm = New-Object System.Windows.Forms.ComboBox
-$cmbSearchAlgoritm.Width = 100
-$cmbSearchAlgoritm.Height = 30
-$cmbSearchAlgoritm.AutoSize = $true
-$cmbSearchAlgoritm.DropDownStyle = 2
-$cmbSearchAlgoritm.AutoCompleteMode  = 0
-$cmbSearchAlgoritm.location = New-object System.Drawing.Point(10,250)
-$cmbSearchAlgoritm.DataSource = $global:SearchAlgoritms
-$cmbSearchAlgoritm.SelectedItem = 0
+$lblSolveAlgoritm = New-Object System.Windows.Forms.Label
+$lblSolveAlgoritm.AutoSize = $true
+$lblSolveAlgoritm.width = 70
+$lblSolveAlgoritm.height = 30
+$lblSolveAlgoritm.TextAlign = 16 #MiddleLeft
+$lblSolveAlgoritm.location = New-object System.Drawing.Point(10,250)
+$lblSolveAlgoritm.Text = "Solve Algoritm"
+
+$cmbSolveAlgoritm = New-Object System.Windows.Forms.ComboBox
+$cmbSolveAlgoritm.Width = 125
+$cmbSolveAlgoritm.Height = 30
+$cmbSolveAlgoritm.AutoSize = $true
+$cmbSolveAlgoritm.DropDownStyle = 2
+$cmbSolveAlgoritm.AutoCompleteMode  = 0
+$cmbSolveAlgoritm.location = New-object System.Drawing.Point(90,250)
+$cmbSolveAlgoritm.DataSource = $global:SolveAlgoritms
+$cmbSolveAlgoritm.SelectedItem = 0
 
 $btnOk = New-Object System.Windows.Forms.Button
 $btnOk.Height = 30
@@ -239,7 +247,7 @@ $FrmLabyrinthianSettings.controls.AddRange(@(
     $sldHeight,$sldHeightNum,$lblHeight,
     $sldSpeed,$sldSpeedNum,$lblSpeed,
     $sldRandom,$sldRandomNum,$lblRandom,
-    $cmbSearchAlgoritm,
+    $lblSolveAlgoritm,$cmbSolveAlgoritm,
     $btnok,$btnApply,$btnCancel
 ))
 
@@ -259,7 +267,7 @@ Function ShowSettings(){
     $sldSpeedNum.value = $global:PlayerPause
     $sldRandom.Value = $global:Randomness
     $sldRandomNum.Value = $global:Randomness
-    $cmbSearchAlgoritm.SelectedItem = $global:SearchAlgoritmIndex
+    $cmbSolveAlgoritm.SelectedItem = $global:SolveAlgoritmIndex
     $FrmLabyrinthianSettings.StartPosition = 'CenterParent'
     $FrmLabyrinthianSettings.ShowDialog()
 }
@@ -273,10 +281,10 @@ Function SaveSettings {
         $BtnSolveLabyrinth.Enabled=$false
     }
     $global:Randomness = $sldRandom.Value
-    If ($global:SearchAlgoritm -ne $cmbSearchAlgoritm.SelectedValue) {
-        $global:SearchAlgoritm = $cmbSearchAlgoritm.SelectedValue
-        $global:SearchAlgoritmIndex = $cmbSearchAlgoritm.SelectedItem
-        $lblCalc.Text = $global:SearchAlgoritm
+    If ($global:SolveAlgoritm -ne $cmbSolveAlgoritm.SelectedValue) {
+        $global:SolveAlgoritm = $cmbSolveAlgoritm.SelectedValue
+        $global:SolveAlgoritmIndex = $cmbSolveAlgoritm.SelectedItem
+        $lblCalc.Text = $global:SolveAlgoritm
         $global:moves = '-'
     }
 }
@@ -523,14 +531,14 @@ Function SolveLabyrinth {
         }
         If ($numofposdir -ne 0) {
             #Search Algoritms
-            $Algoritm = ($global:SearchAlgoritm -split ' ')[0]
+            $Algoritm = ($global:SolveAlgoritm -split ' ')[0]
             If ($Algoritm -eq 'Straight') {
                 $checkdir = $posdir | Where-Object {$_ -eq $Previousdirection}
                 If ($null -ne $checkdir) {
                     $movechoice = $checkdir
                     $direction = $Previousdirection
                 } Else {
-                    $Algoritm = ($global:SearchAlgoritm -split ' ')[1]
+                    $Algoritm = ($global:SolveAlgoritm -split ' ')[1]
                 }
             }
             Switch ($Algoritm) {
@@ -598,7 +606,7 @@ Function SolveLabyrinth {
     #$global:labyrinth[$x][$y]-=64
     $prgCalc.Value = $maxmoves
     If(-not $Global:DrawWhileSearching){DrawLabyrinth}
-    Write-Host "$global:SearchAlgoritm - moves: $global:moves"
+    Write-Host "$global:SolveAlgoritm - moves: $global:moves"
 }
 function ChangeSizeX () {
     $sldwidthNum.Value = $sldWidth.Value
@@ -662,7 +670,7 @@ $btnCancel.Add_Click({
 $lblCalc.Add_Click({
     $lblCalc.Text = $global:moves
     Start-Sleep -Milliseconds 500
-    $lblCalc.Text = $global:SearchAlgoritm
+    $lblCalc.Text = $global:SolveAlgoritm
 })
 $FrmLabyrinthian.Add_Shown({
     InitLabyrinth
