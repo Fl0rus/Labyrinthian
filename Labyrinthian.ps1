@@ -285,7 +285,7 @@ Function SaveSettings {
         $global:SolveAlgoritm = $cmbSolveAlgoritm.SelectedValue
         $global:SolveAlgoritmIndex = $cmbSolveAlgoritm.SelectedItem
         $lblCalc.Text = $global:SolveAlgoritm
-        $global:moves = '-'
+        $global:moves = 0
     }
 }
 
@@ -305,33 +305,33 @@ Function CreateLabyrinth () {
     [System.Collections.ArrayList]$moved = @()
     [System.Collections.ArrayList]$endpoints = @()
     If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
-    $previousmove = $null
+    $previousmove = 0
     While($pointer -ge 0) {
         [System.Collections.ArrayList]$posDir = @()
         If ($y -gt 0) {
             If ($global:labyrinth[$x][$y-1] -eq 0){
-                $posDir.Add(@($global:labyrinth[$x][$y-1],$x,($y-1),'u')) #Up
+                $posDir.Add(@($global:labyrinth[$x][$y-1],$x,($y-1),1)) #Up
             }
         } #up
         If ($y -lt ( $global:SizeY-1)) {
             If ($global:labyrinth[$x][$y+1] -eq 0 ) {
-                $posDir.Add(@(($global:labyrinth[$x][$y+1]),$x,($y+1),'d')) #Down
+                $posDir.Add(@(($global:labyrinth[$x][$y+1]),$x,($y+1),2)) #Down
             }
         } #down
         If ($x -gt 0) {
             If ($global:labyrinth[$x-1][$y] -eq 0) {
-                $posDir.Add(@(($global:labyrinth[$x-1][$y]),($x-1),$y,'l')) #left
+                $posDir.Add(@(($global:labyrinth[$x-1][$y]),($x-1),$y,4)) #left
             }
         }  #left
         If ($x -lt ( $global:SizeX-1)) {
             If($global:labyrinth[$x+1][$y] -eq 0) {
-                $posDir.Add(@(($global:labyrinth[$x+1][$y]),($x+1),$y,'r'))#right
+                $posDir.Add(@(($global:labyrinth[$x+1][$y]),($x+1),$y,8))#right
             }
         } #right
         #Random direction
         $numofposdir = $posdir.Count
         If ($numofposdir -ne 0) {
-            $movedetection = $posdir | Where-Object {$_ -eq $previousmove}
+            $movedetection = $posdir | Where-Object {$_[3] -eq $previousmove}
             If ($null -eq $movedetection) {
                 $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
             } Elseif ((Get-Random -Minimum 0 -Maximum $global:Randomness) -eq 0) {
@@ -339,23 +339,17 @@ Function CreateLabyrinth () {
             }
             $previousmove = $movedetection[3]
             #deur gevonden
-            Switch($movedetection[3]){
-                'u' {$value=1}
-                'd' {$value=2}
-                'l' {$value=4}
-                'r' {$value=8}
-            }
-            $global:labyrinth[$x][$y] += $value
+            $global:labyrinth[$x][$y] += $movedetection[3]
             $moved.Add(@($x,$y))
             $pointer=$moved.count
             $x=$movedetection[1]
             $y=$movedetection[2]
             #Deur naar de andere kant!
             Switch($movedetection[3]){
-                'u' {$value=2}
-                'd' {$value=1}
-                'l' {$value=8}
-                'r' {$value=4}
+                1 {$value=2}
+                2 {$value=1}
+                4 {$value=8}
+                8 {$value=4}
             }
             $global:labyrinth[$x][$y] += $value
             #Write-host "Step $pointer = Moved to $x $y"
@@ -366,13 +360,7 @@ Function CreateLabyrinth () {
             $pointermax=$pointer+1
             $endpoints.Add(@($x,$y))
             If (($x -lt $global:SizeX) -and ($x -gt 0) -and ($y -gt 0) -and ($y -lt $global:SizeY)){
-                Switch($previousmove){
-                    'u' {$value=1}
-                    'd' {$value=2}
-                    'l' {$value=4}
-                    'r' {$value=8}
-                }
-                $global:labyrinth[$x][$y] += $value
+                $global:labyrinth[$x][$y] += $previousmove
                 If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
             }
         } Else {
@@ -528,7 +516,7 @@ Function SolveLabyrinth {
     [System.Collections.ArrayList]$moved=@()
     While (($global:labyrinth[$x][$y] -band 512) -ne 512) {
         [System.Collections.ArrayList]$posDir = @()
-        If (($global:labyrinth[$x][$y] -band 1) -eq 1 -and (($global:labyrinth[$x][($y-1)] -band 240) -eq 0)) {$posdir.add(@($x,($y-1),'u'))}
+        If (($global:labyrinth[$x][$y] -band 1) -eq 1 -and (($global:labyrinth[$x][($y-1)] -band 240) -eq 0)) {$posdir.add(@($x,($y-1),1))}
         If (($global:labyrinth[$x][$y] -band 2) -eq 2 -and (($global:labyrinth[$x][($y+1)] -band 240) -eq 0)) {$posdir.add(@($x,($y+1),'d'))}
         If (($global:labyrinth[$x][$y] -band 4) -eq 4 -and (($global:labyrinth[($x-1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x-1),$y,'l'))}
         If (($global:labyrinth[$x][$y] -band 8) -eq 8 -and (($global:labyrinth[($x+1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x+1),$y,'r'))}
@@ -578,7 +566,7 @@ Function SolveLabyrinth {
             }
             $global:labyrinth[$x][$y]-=($global:labyrinth[$x][$y] -band 240)
             Switch ($direction){
-                'u' {$global:labyrinth[$x][$y]+=16}
+                1 {$global:labyrinth[$x][$y]+=16}
                 'd' {$global:labyrinth[$x][$y]+=32}
                 'l' {$global:labyrinth[$x][$y]+=64}
                 'r' {$global:labyrinth[$x][$y]+=128}
