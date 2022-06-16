@@ -516,10 +516,10 @@ Function SolveLabyrinth {
     [System.Collections.ArrayList]$moved=@()
     While (($global:labyrinth[$x][$y] -band 512) -ne 512) {
         [System.Collections.ArrayList]$posDir = @()
-        If (($global:labyrinth[$x][$y] -band 1) -eq 1 -and (($global:labyrinth[$x][($y-1)] -band 240) -eq 0)) {$posdir.add(@($x,($y-1),1))}
-        If (($global:labyrinth[$x][$y] -band 2) -eq 2 -and (($global:labyrinth[$x][($y+1)] -band 240) -eq 0)) {$posdir.add(@($x,($y+1),'d'))}
-        If (($global:labyrinth[$x][$y] -band 4) -eq 4 -and (($global:labyrinth[($x-1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x-1),$y,'l'))}
-        If (($global:labyrinth[$x][$y] -band 8) -eq 8 -and (($global:labyrinth[($x+1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x+1),$y,'r'))}
+        If (($global:labyrinth[$x][$y] -band 1) -eq 1 -and (($global:labyrinth[$x][($y-1)] -band 240) -eq 0)) {$posdir.add(@($x,($y-1),16))}
+        If (($global:labyrinth[$x][$y] -band 2) -eq 2 -and (($global:labyrinth[$x][($y+1)] -band 240) -eq 0)) {$posdir.add(@($x,($y+1),32))}
+        If (($global:labyrinth[$x][$y] -band 4) -eq 4 -and (($global:labyrinth[($x-1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x-1),$y,64))}
+        If (($global:labyrinth[$x][$y] -band 8) -eq 8 -and (($global:labyrinth[($x+1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x+1),$y,128))}
         $numofposdir = $posdir.Count
         If($global:moves -lt $maxmoves) {
             $global:moves++
@@ -529,7 +529,7 @@ Function SolveLabyrinth {
             #Search Algoritms
             $Algoritm = ($global:SolveAlgoritm -split ' ')[0]
             If ($Algoritm -eq 'Straight') {
-                $checkdir = $posdir | Where-Object {$_ -eq $Previousdirection}
+                $checkdir = $posdir | Where-Object {$_[2] -eq $Previousdirection}
                 If ($null -ne $checkdir) {
                     $movechoice = $checkdir
                     $direction = $Previousdirection
@@ -565,12 +565,7 @@ Function SolveLabyrinth {
                 }
             }
             $global:labyrinth[$x][$y]-=($global:labyrinth[$x][$y] -band 240)
-            Switch ($direction){
-                1 {$global:labyrinth[$x][$y]+=16}
-                'd' {$global:labyrinth[$x][$y]+=32}
-                'l' {$global:labyrinth[$x][$y]+=64}
-                'r' {$global:labyrinth[$x][$y]+=128}
-            }
+            $global:labyrinth[$x][$y]+=$direction
             $Previousdirection = $direction
             If($Global:DrawWhileSearching){
                 $global:labyrinth[$x][$y]+= 1024
