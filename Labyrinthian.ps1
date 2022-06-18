@@ -21,11 +21,11 @@ $global:brushPlayer = New-Object Drawing.SolidBrush Red
 #Global settings
 $Global:DrawWhileBuilding = $false
 $Global:DrawWhileSearching = $true
-$global:PlayerPause = 10
+$global:PlayerPause = 2
 $global:ClearLabBeforeSearching = $true
 $global:Randomness = 3
 $global:SolveAlgoritms =@('Straight Random','Straight Fixed','Random','Fixed','Radar')
-$global:SolveAlgoritm = 'Straight Random'
+$global:SolveAlgoritm = 'Radar'
 $global:gaps = $false
 $global:randomgaps = 0
 $global:moves = 0
@@ -213,8 +213,13 @@ $cmbSolveAlgoritm.AutoSize = $true
 $cmbSolveAlgoritm.DropDownStyle = 2
 $cmbSolveAlgoritm.AutoCompleteMode  = 0
 $cmbSolveAlgoritm.location = New-object System.Drawing.Point(90,250)
-$cmbSolveAlgoritm.DataSource = $global:SolveAlgoritms
-$cmbSolveAlgoritm.SelectedItem = 0
+#$cmbSolveAlgoritm.DataSource = $global:SolveAlgoritms
+For ($i=0;$i -lt $global:SolveAlgoritms.count;$i++) {
+    $cmbSolveAlgoritm.items.Add($global:SolveAlgoritms[$i])
+    If ($global:SolveAlgoritms[$i] -eq $global:SolveAlgoritm) {$global:SolveAlgoritmIndex =$i}
+}
+$cmbSolveAlgoritm.SelectedIndex= $global:SolveAlgoritmIndex
+Write-host $global:SolveAlgoritmIndex
 
 $btnOk = New-Object System.Windows.Forms.Button
 $btnOk.Height = 30
@@ -269,8 +274,15 @@ Function ShowSettings(){
     $sldSpeedNum.value = $global:PlayerPause
     $sldRandom.Value = $global:Randomness
     $sldRandomNum.Value = $global:Randomness
-    $cmbSolveAlgoritm.SelectedItem = $global:SolveAlgoritmIndex
+    For ($i=0;$i -lt $global:SolveAlgoritms.count;$i++) {
+        If ($global:SolveAlgoritms[$i] -eq $global:SolveAlgoritm) {$x=$i}
+    }
+    $cmbSolveAlgoritm.SelectedItem = $x
+    $global:SolveAlgoritmIndex = $x
+    Write-Host $x
+    #$cmbSolveAlgoritm.SelectedItem = $global:SolveAlgoritmIndex
     $FrmLabyrinthianSettings.StartPosition = 'CenterParent'
+    $FrmLabyrinthianSettings.Update()
     $FrmLabyrinthianSettings.ShowDialog()
 }
 Function SaveSettings {
