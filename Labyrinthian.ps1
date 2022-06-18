@@ -20,6 +20,8 @@ $global:brushr = New-Object Drawing.SolidBrush Tomato
 $global:brushlc = New-Object Drawing.SolidBrush WhiteSmoke
 $global:brushPlayer = New-Object Drawing.SolidBrush Red
 
+#Global timer
+$global:Stopwatch = New-Object -TypeName System.Diagnostics.Stopwatch
 #Global settings Create
 $Global:DrawWhileBuilding = $false
 $Global:DrawWhileSearching = $true
@@ -89,9 +91,14 @@ $lblCalc.Height = 25
 $lblCalc.TextAlign = 32 #MiddleCenter
 $lblCalc.Location = New-Object System.Drawing.Point(225,0)
 $lblCalc.Text = $global:SolveAlgoritm
-#$lblCalc.BackColor = 'Transparant'
 
-#settings Create controls
+$timTimer = New-object System.Windows.Forms.Timer
+$timTimer.Enabled = $false
+$timTimer.Interval = 500
+
+##########################
+#Create Settings controls #
+##########################
 $chkDrawLab = New-Object System.Windows.Forms.Checkbox
 $chkDrawLab.AutoSize = $true
 $chkDrawLab.Width = 25
@@ -231,7 +238,6 @@ $sldRandom.TickFrequency = 10
 $sldRandom.TickStyle = 2
 $sldRandom.Orientation = 0
 
-
 $sldRandomNum = New-Object System.Windows.Forms.NumericUpDown
 $sldRandomNum.width = 45
 $sldRandomNum.Height = 25
@@ -239,8 +245,9 @@ $sldRandomNum.Location = New-Object System.Drawing.Point(300,245)
 $sldRandomNum.Maximum = 100
 $sldRandomNum.Minimum = 1
 
-
-#Solve Settings controls
+##########################
+#Solve Settings controls #
+##########################
 $chkDrawSol = New-Object System.Windows.Forms.Checkbox
 $chkDrawSol.AutoSize = $true
 $chkDrawSol.Width = 25
@@ -294,6 +301,14 @@ For ($i=0;$i -lt $global:SolveAlgoritms.count;$i++) {
 }
 $cmbSolveAlgoritm.SelectedIndex= $global:SolveAlgoritmIndex
 
+$chkDeadEndFill = New-Object System.Windows.Forms.Checkbox
+$chkDeadEndFill.AutoSize = $true
+$chkDeadEndFill.Checked = $global:DeadEndFilling
+$chkDeadEndFill.Width = 25
+$chkDeadEndFill.Height = 25
+$chkDeadEndFill.Text = "Dead End Filling"
+$chkDeadEndFill.Location = New-Object System.Drawing.Point(10,110)
+
 $btnOk = New-Object System.Windows.Forms.Button
 $btnOk.Height = 30
 $btnok.width = 100
@@ -339,7 +354,8 @@ $tabCreatecontrols = @(
 $tabSolvecontrols = @(
     $chkDrawSol,
     $sldSpeed,$sldSpeedNum,$lblSpeed,
-    $lblSolveAlgoritm,$cmbSolveAlgoritm
+    $lblSolveAlgoritm,$cmbSolveAlgoritm,
+    $chkDeadEndFill
 )
 
 foreach ($tabcreatecontrol in $tabcreatecontrols) {$tabpageCreate.Controls.Add($tabcreatecontrol)}
@@ -367,11 +383,22 @@ Function ShowSettings(){
     
     $chkDrawSol.Checked = $Global:DrawWhileSearching
     $chkDrawLab.Checked = $Global:DrawWhileBuilding
-
+    $chkDeadEndFill.Checked = $global:DeadEndFilling
     $sldWidth.Value = $global:SizeX
     $sldwidthNum.value= $global:SizeX
     $sldHeight.Value = $global:SizeY
     $sldHeightNum.value = $global:SizeY
+    If($global:isCreating -or $global:isSolving) {
+        $sldWidth.Enabled = $false
+        $sldwidthNum.Enabled = $false
+        $sldHeight.Enabled = $false
+        $sldHeightNum.Enabled = $false
+    } Else {
+        $sldWidth.Enabled = $true
+        $sldwidthNum.Enabled = $true
+        $sldHeight.Enabled = $true
+        $sldHeightNum.Enabled = $true
+    }
     $sldSpeed.Value = $global:PlayerPause
     $sldSpeedNum.value = $global:PlayerPause
     $sldRandom.Value = $global:Randomness
@@ -386,11 +413,13 @@ Function ShowSettings(){
 Function SaveSettings {
     $Global:DrawWhileBuilding = $chkDrawLab.Checked
     $Global:DrawWhileSearching = $chkDrawSol.Checked
+    $global:DeadEndFilling = $chkDeadEndFill.Checked
     $global:PlayerPause = $sldSpeed.Value
     If ($global:SizeX -ne $sldWidth.Value -or $global:SizeY -ne $sldHeight.Value) {
         $global:SizeX = $sldWidth.Value
         $global:SizeY = $sldHeight.Value
-        $BtnSolveLabyrinth.Enabled=$false
+        $global:maxmoves=($global:SizeX*$global:SizeY)
+        InitLabyrinth
     }
     $global:Randomness = $sldRandom.Value
     If ($global:SolveAlgoritm -ne $cmbSolveAlgoritm.SelectedItem) {
@@ -406,7 +435,10 @@ Function SaveSettings {
 
 }
 Function InitLabyrinth(){
+    $BtnCreateLabyrinth.Enabled = $false
+    $BtnSolveLabyrinth.Enabled = $false
     #Draw stuff prep
+    $global:Graphics = $FrmLabyrinthian.CreateGraphics()
     [System.Collections.ArrayList]$global:labyrinth = @()
     #$Size =  $global:SizeX *  $global:SizeY
     For($i=0;$i -lt $global:SizeX;$i++) {
@@ -415,10 +447,15 @@ Function InitLabyrinth(){
             $global:labyrinth[$i] += 0
         }
     }
-    $global:Graphics = $FrmLabyrinthian.CreateGraphics()
     $prgcalc.width = $FrmLabyrinthian.Width-225
+    ClearLabyrinth
+    CreateLabyrinth
+    If(-not $Global:DrawWhileBuilding){DrawLabyrinth}
+    $BtnCreateLabyrinth.Enabled = $true
+    $BtnSolveLabyrinth.Enabled = $true
 }
 Function CreateLabyrinth () {
+    $global:isCreating = $true
     #Fill labyrinth matrix array
     #ClearLabyrinth
     #Create Labyrinth
@@ -566,9 +603,13 @@ Function CreateLabyrinth () {
     $global:labyrinth[$global:Finish[0]][$global:Finish[1]] = 512 #finish
     If($Global:DrawWhileBuilding){DrawExplorer -x $global:Finish[0] -y $global:Finish[1]}
     $Global:FirstSolve = $true
+    $global:isCreating = $false
 }
 Function SolveLabyrinth {
     Param ()
+    $global:isSolving = $true
+    $global:moves=0
+    $global:maxmoves=($global:SizeX*$global:SizeY)
     #Clear breadcrumbs
     For($i=0;$i -lt  $global:SizeX;$i++) {
         For ($o=0;$o -lt  $global:SizeY;$o++) {
@@ -586,7 +627,6 @@ Function SolveLabyrinth {
         ForEach($endpoint in $global:endpoints){
             $x = $endpoint[0]
             $y = $endpoint[1]
-#            $global:labyrinth[$x][$y] += 240
             [System.Collections.ArrayList]$posDir = @()
             $posdir.add(@($x,$y))
             Do {
@@ -612,10 +652,8 @@ Function SolveLabyrinth {
     $y =$global:start[1]
     $Progress=1
     $progressmax=1
-    $global:moves=0
-    $maxmoves=($global:SizeX*$global:SizeY)
     $prgCalc.Value =$global:moves
-    $prgCalc.Maximum = $maxmoves
+    $prgCalc.Maximum = $global:maxmoves
     [System.Collections.ArrayList]$moved=@()
     While (($global:labyrinth[$x][$y] -band 512) -ne 512) {
         [System.Collections.ArrayList]$posDir = @()
@@ -624,7 +662,7 @@ Function SolveLabyrinth {
         If (($global:labyrinth[$x][$y] -band 4) -eq 4 -and (($global:labyrinth[($x-1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x-1),$y,64))}
         If (($global:labyrinth[$x][$y] -band 8) -eq 8 -and (($global:labyrinth[($x+1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x+1),$y,128))}
         $numofposdir = $posdir.Count
-        If($global:moves -lt $maxmoves) {
+        If($global:moves -lt $global:maxmoves) {
             $global:moves++
             $prgCalc.Value = $global:moves
         }
@@ -652,7 +690,7 @@ Function SolveLabyrinth {
                 }
                 'Radar' {
                     #Radar = Look over the hedges to see which direction
-                    $difmin = $maxmoves
+                    $difmin = $global:maxmoves
                     For ($i=0;$i -lt $numofposdir;$i++) {
                         $difx = [math]::abs(($posdir[$i])[0] - $global:Finish[0])
                         $dify = [math]::abs(($posdir[$i])[1] - $global:Finish[1])
@@ -711,9 +749,10 @@ Function SolveLabyrinth {
         #Write-host "$x $y"
     }
     #$global:labyrinth[$x][$y]-=64
-    $prgCalc.Value = $maxmoves
+    $prgCalc.Value = $global:maxmoves
     If(-not $Global:DrawWhileSearching){DrawLabyrinth}
-    Write-Host "$global:CreateAlgoritm - $global:SolveAlgoritm - moves: $global:moves"
+    #Write-Log "$global:CreateAlgoritm - $global:SolveAlgoritm - moves: $global:moves"
+    $global:isSolving = $false
 }
 Function ClearLabyrinth () {
     #$FrmLabyrinthian.Refresh()
@@ -838,16 +877,8 @@ function ChangeRandom () {
 function ChangeRandomNum () {
     $sldRandom.Value = $sldRandomNum.Value 
 }
-
 $BtnCreateLabyrinth.Add_Click({
-    $BtnCreateLabyrinth.Enabled = $false
-    $BtnSolveLabyrinth.Enabled = $false
     InitLabyrinth
-    ClearLabyrinth
-    CreateLabyrinth
-    If(-not $Global:DrawWhilebuilding){DrawLabyrinth}
-    $BtnCreateLabyrinth.Enabled = $true
-    $BtnSolveLabyrinth.Enabled = $true
 })
 $BtnSolveLabyrinth.Add_Click({
     $BtnCreateLabyrinth.Enabled = $false
@@ -884,17 +915,38 @@ $btnCancel.Add_Click({
     $FrmLabyrinthianSettings.Close()
 })
 $lblCalc.Add_Click({
-    $lblCalc.Text = $global:moves
-    Start-Sleep -Milliseconds 500
-    $lblCalc.Text = $global:SolveAlgoritm
+    If($timTimer.Enabled) {
+        $timTimer.Stop()
+        $timTimer.Enabled =$false
+    } Else {
+        $timTimer.Enabled =$true
+        $timTimer.Start()
+        $global:timerticks =0
+    }
 })
 $FrmLabyrinthian.Add_Shown({
-    $BtnCreateLabyrinth.Enabled = $false
-    $BtnSolveLabyrinth.Enabled = $false
     InitLabyrinth
-    CreateLabyrinth
-    If(-not $Global:DrawWhileBuilding){DrawLabyrinth}
-    $BtnCreateLabyrinth.Enabled = $true
-    $BtnSolveLabyrinth.Enabled = $true
+})
+$timTimer.Add_Tick({
+    If ($global:prevmoves -ne $global:moves){
+        $lblCalc.ForeColor ='Red';$lblCalc.Text = $global:moves
+    } Else {
+        Switch ($global:timerticks){
+            0 {$lblCalc.ForeColor ='Black';$lblCalc.Text = $global:CreateAlgoritm}
+            1 {$lblCalc.ForeColor = 'Black';$lblCalc.Text = $global:SolveAlgoritm}
+            2 {$lblCalc.ForeColor ='Red';$lblCalc.Text = $global:moves}
+            3 {$lblCalc.ForeColor ='Lime';$lblCalc.Text = $global:maxmoves}
+            Default {$global:timerticks = -1}
+        }
+        $global:timerticks++
+    }
+    $FrmLabyrinthian.Update()
+    [System.Windows.Forms.Application]::DoEvents()
+    $global:prevmoves = $global:moves
+})
+$FrmLabyrinthian.Add_FormClosed({
+    $timTimer.Stop()
+    $timTimer.Dispose()
 })
 [void][System.Windows.Forms.Application]::Run($FrmLabyrinthian)
+#End
