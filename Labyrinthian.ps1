@@ -18,13 +18,13 @@ $global:brushfin = New-Object Drawing.SolidBrush Purple
 $global:brushbc = New-Object Drawing.SolidBrush Lavender
 $global:brushr = New-Object Drawing.SolidBrush Tomato
 $global:brushlc = New-Object Drawing.SolidBrush WhiteSmoke
-$global:brushPlayer = New-Object Drawing.SolidBrush Red
+$global:brushPlayer = New-Object Drawing.SolidBrush Fuchsia
 
 #Global timer
 $global:Stopwatch = New-Object -TypeName System.Diagnostics.Stopwatch
 #Global settings Create
 $Global:DrawWhileBuilding = $false
-$Global:DrawWhileSearching = $true
+$global:DrawWhileSolving = $true
 $global:BuildPause= 20
 $global:Randomness = 3
 $global:CreateAlgoritms =@('Depth-First','Kruskai','Prim','Wilson','Aldous-Broder')
@@ -285,7 +285,7 @@ $lblSolveAlgoritm.AutoSize = $true
 $lblSolveAlgoritm.width = 70
 $lblSolveAlgoritm.height = 30
 $lblSolveAlgoritm.TextAlign = 16 #MiddleLeft
-$lblSolveAlgoritm.location = New-object System.Drawing.Point(10,90)
+$lblSolveAlgoritm.location = New-object System.Drawing.Point(10,85)
 $lblSolveAlgoritm.Text = "Solve Algoritm"
 
 $cmbSolveAlgoritm = New-Object System.Windows.Forms.ComboBox
@@ -294,7 +294,7 @@ $cmbSolveAlgoritm.Height = 30
 $cmbSolveAlgoritm.AutoSize = $true
 $cmbSolveAlgoritm.DropDownStyle = 2
 $cmbSolveAlgoritm.AutoCompleteMode  = 0
-$cmbSolveAlgoritm.location = New-object System.Drawing.Point(95,90)
+$cmbSolveAlgoritm.location = New-object System.Drawing.Point(95,85)
 For ($i=0;$i -lt $global:SolveAlgoritms.count;$i++) {
     [void]$cmbSolveAlgoritm.items.Add($global:SolveAlgoritms[$i])
     If ($global:SolveAlgoritms[$i] -eq $global:SolveAlgoritm) {$global:SolveAlgoritmIndex =$i}
@@ -381,7 +381,7 @@ Function ShowSettings(){
     $tabSettings.Width = $FrmLabyrinthianSettings.Width -16
     $tabSettings.Height = $FrmLabyrinthianSettings.Height -90
     
-    $chkDrawSol.Checked = $Global:DrawWhileSearching
+    $chkDrawSol.Checked = $Global:DrawWhileSolving
     $chkDrawLab.Checked = $Global:DrawWhileBuilding
     $chkDeadEndFill.Checked = $global:DeadEndFilling
     $sldWidth.Value = $global:SizeX
@@ -411,22 +411,27 @@ Function ShowSettings(){
     $FrmLabyrinthianSettings.ShowDialog()
 }
 Function SaveSettings {
+    Param (
+        [Switch]$Apply
+    )
     $Global:DrawWhileBuilding = $chkDrawLab.Checked
-    $Global:DrawWhileSearching = $chkDrawSol.Checked
+    $global:DrawWhileSolving = $chkDrawSol.Checked
     $global:DeadEndFilling = $chkDeadEndFill.Checked
     $global:PlayerPause = $sldSpeed.Value
     If ($global:SizeX -ne $sldWidth.Value -or $global:SizeY -ne $sldHeight.Value) {
         $global:SizeX = $sldWidth.Value
         $global:SizeY = $sldHeight.Value
         $global:maxmoves=($global:SizeX*$global:SizeY)
-        InitLabyrinth
+        If(-not $Apply) {InitLabyrinth} Else {$BtnSolveLabyrinth.Enabled=$false}
     }
     $global:Randomness = $sldRandom.Value
     If ($global:SolveAlgoritm -ne $cmbSolveAlgoritm.SelectedItem) {
         $global:SolveAlgoritm = $cmbSolveAlgoritm.SelectedItem
         $global:SolveAlgoritmIndex = $cmbSolveAlgoritm.SelectedIndex
-        $lblCalc.Text = $global:SolveAlgoritm
-        $global:moves = 0
+    }
+    If ($global:CreateAlgoritm -ne $cmbCreateAlgoritm.SelectedItem) {
+        $global:CreateAlgoritm = $cmbCreateAlgoritm.SelectedItem 
+        $global:CreateAlgoritmIndex = $cmbCreateAlgoritmIndex.SelectedIndex 
     }
     $global:Startpoint = $cmbStartpoint.SelectedItem
     $global:StartpointIndex = $cmbStartpoint.SelectedIndex
@@ -456,9 +461,6 @@ Function InitLabyrinth(){
 }
 Function CreateLabyrinth () {
     $global:isCreating = $true
-    #Fill labyrinth matrix array
-    #ClearLabyrinth
-    #Create Labyrinth
     Switch ($global:Startpoint) {
         'Random'{
             $x = Get-Random -Minimum 1 -Maximum ($global:SizeX-1)
@@ -499,106 +501,117 @@ Function CreateLabyrinth () {
     [System.Collections.ArrayList]$global:endpoints = @()
     If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
     $previousmove = 0
-    While($pointer -ge 0) {
-        [System.Collections.ArrayList]$posDir = @()
-        If ($y -gt 0) {
-            If ($global:labyrinth[$x][$y-1] -eq 0){
-                $posDir.Add(@($global:labyrinth[$x][$y-1],$x,($y-1),1)) #Up
-            }
-        } #up
-        If ($y -lt ( $global:SizeY-1)) {
-            If ($global:labyrinth[$x][$y+1] -eq 0 ) {
-                $posDir.Add(@(($global:labyrinth[$x][$y+1]),$x,($y+1),2)) #Down
-            }
-        } #down
-        If ($x -gt 0) {
-            If ($global:labyrinth[$x-1][$y] -eq 0) {
-                $posDir.Add(@(($global:labyrinth[$x-1][$y]),($x-1),$y,4)) #left
-            }
-        }  #left
-        If ($x -lt ( $global:SizeX-1)) {
-            If($global:labyrinth[$x+1][$y] -eq 0) {
-                $posDir.Add(@(($global:labyrinth[$x+1][$y]),($x+1),$y,8))#right
-            }
-        } #right
-        #Random direction
-        $numofposdir = $posdir.Count
-        If ($numofposdir -ne 0) {
-            $movedetection = $posdir | Where-Object {$_[3] -eq $previousmove}
-            If ($null -eq $movedetection) {
-                $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
-            } Elseif ((Get-Random -Minimum 0 -Maximum $global:Randomness) -eq 0) {
-                $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
-            }
-            $previousmove = $movedetection[3]
-            #deur gevonden
-            $global:labyrinth[$x][$y] += $movedetection[3]
-            $moved.Add(@($x,$y))
-            $pointer=$moved.count
-            $x=$movedetection[1]
-            $y=$movedetection[2]
-            #Deur naar de andere kant!
-            Switch($movedetection[3]){
-                1 {$value=2}
-                2 {$value=1}
-                4 {$value=8}
-                8 {$value=4}
-            }
-            $global:labyrinth[$x][$y] += $value
-            #Write-host "Step $pointer = Moved to $x $y"
-            $prgCalc.Value = $progress
-            If($Global:DrawWhileBuilding){
-                DrawExplorer -x $x -y $y
-                Start-Sleep -Milliseconds $global:BuildPause
-            }
-            $progress++
-        } ElseIf ($pointer -gt $pointermax) {
-            $pointermax=$pointer+1
-            $global:endpoints.Add(@($x,$y))
-            If (($x -lt $global:SizeX) -and ($x -gt 0) -and ($y -gt 0) -and ($y -lt $global:SizeY) -and $global:gaps){
-                $global:labyrinth[$x][$y] += $previousmove
-            }
-            If($Global:DrawWhileBuilding){
-                DrawExplorer -x $x -y $y
-                Start-Sleep -Milliseconds $global:BuildPause
-            }
-        } Else {
-            $pointer--
-            $x = $moved[$pointer][0]
-            $y = $moved[$pointer][1]
-            #Write-host "Step $pointer = Niewe scan op punt $x $y"
-        }
-    }
-    Switch ($Global:Finishpoint){
-        'Endpoint Random'{
-            $endpoint=$global:endpoints[(Get-Random -Minimum 0 -Maximum ($global:endpoints.Count-1))]
-            $global:Finish=@($endpoint[0],$endpoint[1])
-        }
-        'Endpoint Far' {
-            $maxdistance=0
-            ForEach($endpoint in $global:endpoints){
-                $distance = [math]::abs(($endpoint[0]+$endpoint[1])-($global:start[0]+$global:start[1]))
-                If($distance -gt $maxdistance) {
-                    $maxdistance = $distance 
-                    $global:Finish=$endpoint
+    Switch($global:CreateAlgoritm){
+        'Depth-First' {
+            While($pointer -ge 0) {
+                [System.Collections.ArrayList]$posDir = @()
+                If ($y -gt 0) {
+                    If ($global:labyrinth[$x][$y-1] -eq 0){
+                        $posDir.Add(@($global:labyrinth[$x][$y-1],$x,($y-1),1)) #Up
+                    }
+                } #up
+                If ($y -lt ( $global:SizeY-1)) {
+                    If ($global:labyrinth[$x][$y+1] -eq 0 ) {
+                        $posDir.Add(@(($global:labyrinth[$x][$y+1]),$x,($y+1),2)) #Down
+                    }
+                } #down
+                If ($x -gt 0) {
+                    If ($global:labyrinth[$x-1][$y] -eq 0) {
+                        $posDir.Add(@(($global:labyrinth[$x-1][$y]),($x-1),$y,4)) #left
+                    }
+                }  #left
+                If ($x -lt ( $global:SizeX-1)) {
+                    If($global:labyrinth[$x+1][$y] -eq 0) {
+                        $posDir.Add(@(($global:labyrinth[$x+1][$y]),($x+1),$y,8))#right
+                    }
+                } #right
+                #Random direction
+                $numofposdir = $posdir.Count
+                If ($numofposdir -ne 0) {
+                    $movedetection = $posdir | Where-Object {$_[3] -eq $previousmove}
+                    If ($null -eq $movedetection) {
+                        $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
+                    } Elseif ((Get-Random -Minimum 0 -Maximum $global:Randomness) -eq 0) {
+                        $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
+                    }
+                    $previousmove = $movedetection[3]
+                    #deur gevonden
+                    $global:labyrinth[$x][$y] += $movedetection[3]
+                    $moved.Add(@($x,$y))
+                    $pointer=$moved.count
+                    $x=$movedetection[1]
+                    $y=$movedetection[2]
+                    #Deur naar de andere kant!
+                    Switch($movedetection[3]){
+                        1 {$value=2}
+                        2 {$value=1}
+                        4 {$value=8}
+                        8 {$value=4}
+                    }
+                    $global:labyrinth[$x][$y] += $value
+                    #Write-host "Step $pointer = Moved to $x $y"
+                    $prgCalc.Value = $progress
+                    If($Global:DrawWhileBuilding){
+                        DrawExplorer -x $x -y $y
+                        Start-Sleep -Milliseconds $global:BuildPause
+                    }
+                    $progress++
+                } ElseIf ($pointer -gt $pointermax) {
+                    $pointermax=$pointer+1
+                    $global:endpoints.Add(@($x,$y))
+                    If (($x -lt $global:SizeX) -and ($x -gt 0) -and ($y -gt 0) -and ($y -lt $global:SizeY) -and $global:gaps){
+                        $global:labyrinth[$x][$y] += $previousmove
+                    }
+                    If($Global:DrawWhileBuilding){
+                        DrawExplorer -x $x -y $y
+                        Start-Sleep -Milliseconds $global:BuildPause
+                    }
+                } Else {
+                    $pointer--
+                    $x = $moved[$pointer][0]
+                    $y = $moved[$pointer][1]
+                    #Write-host "Step $pointer = Niewe scan op punt $x $y"
                 }
             }
         }
-        'Endpoint Last' {
-            $global:Finish=$global:endpoints[($global:endpoints.Count-1)]
+        'Kruskai' {}
+        default {Write-Host "$global:CreateAlgoritm not yet implemeted"}
+    }
+    #End point placing
+    If ($pointer -ne 0) {
+        Switch ($Global:Finishpoint){
+            'Endpoint Random'{
+                $endpoint=$global:endpoints[(Get-Random -Minimum 0 -Maximum ($global:endpoints.Count-1))]
+                $global:Finish=@($endpoint[0],$endpoint[1])
+            }
+            'Endpoint Far' {
+                $maxdistance=0
+                ForEach($endpoint in $global:endpoints){
+                    $distance = [math]::abs(($endpoint[0]+$endpoint[1])-($global:start[0]+$global:start[1]))
+                    If($distance -gt $maxdistance) {
+                        $maxdistance = $distance 
+                        $global:Finish=$endpoint
+                    }
+                }
+            }
+            'Endpoint Last' {
+                $global:Finish=$global:endpoints[($global:endpoints.Count-1)]
+            }
+            'Endpoint First' {
+                $global:Finish=$global:endpoints[0]
+            }
+            'Center' {
+                $global:Finish=@([math]::Round(($global:SizeX-1)/2),[math]::Round(($global:SizeY-1)/2))
+            }
+            'Random'{
+                $global:Finish=@(Get-Random -Minimum 1 -Maximum ($global:SizeX-1),Get-Random -Minimum 1 -Maximum ($global:SizeY-1))        }
+            'Top-Left' {$global:Finish=@(0,0)}
+            'Top-Right'{$global:Finish=@(($global:SizeX-1),0)}
+            'Bottom-Right'{$global:Finish=@(($global:SizeX-1),($global:SizeY-1))}
+            'Bottom-Left'{$global:Finish=@(0,($global:SizeY-1))}
         }
-        'Endpoint First' {
-            $global:Finish=$global:endpoints[0]
-        }
-        'Center' {
-            $global:Finish=@([math]::Round(($global:SizeX-1)/2),[math]::Round(($global:SizeY-1)/2))
-        }
-        'Random'{
-            $global:Finish=@(Get-Random -Minimum 1 -Maximum ($global:SizeX-1),Get-Random -Minimum 1 -Maximum ($global:SizeY-1))        }
-        'Top-Left' {$global:Finish=@(0,0)}
-        'Top-Right'{$global:Finish=@(($global:SizeX-1),0)}
-        'Bottom-Right'{$global:Finish=@(($global:SizeX-1),($global:SizeY-1))}
-        'Bottom-Left'{$global:Finish=@(0,($global:SizeY-1))}
+    } Else {
+        $global:Finish=$Global:Start #Create 12 pixel labyrinth
     }
     $global:labyrinth[$global:Finish[0]][$global:Finish[1]] = 512 #finish
     If($Global:DrawWhileBuilding){DrawExplorer -x $global:Finish[0] -y $global:Finish[1]}
@@ -625,10 +638,8 @@ Function SolveLabyrinth {
     #Write-host "$global:start $global:finish"
     If ($global:DeadEndFilling) {
         ForEach($endpoint in $global:endpoints){
-            $x = $endpoint[0]
-            $y = $endpoint[1]
             [System.Collections.ArrayList]$posDir = @()
-            $posdir.add(@($x,$y))
+            $posdir.add($endpoint)
             Do {
                 #Fill with bread crumb
                 $movechoice = $posDir[0]
@@ -679,7 +690,7 @@ Function SolveLabyrinth {
                 }
             }
             Switch ($Algoritm) {
-                'Straight' {}
+                'Straight' {<#Picked up in if Statement#>}
                 'Random' {
                     $movechoice = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
                     $direction = $movechoice[2]
@@ -704,12 +715,16 @@ Function SolveLabyrinth {
                     $movechoice = $posDir[$choice]
                     $direction = $movechoice[2]
                 }
+                default {
+                    $movechoice = $global:Finish
+                    Write-host "$global:SolveAlgoritm not implemented"
+                }
             }
             $global:labyrinth[$x][$y]-=($global:labyrinth[$x][$y] -band 240)
             $global:labyrinth[$x][$y]+=$direction
             $Previousdirection = $direction
-            If($Global:DrawWhileSearching){
-                $global:labyrinth[$x][$y]+= 1024
+            If($global:DrawWhileSolving){
+                $global:labyrinth[$x][$y]+=1024
                 DrawExplorer -x $x -y $y
                 Start-Sleep -Milliseconds $global:PlayerPause
                 DrawExplorer -x $x -y $y
@@ -723,8 +738,8 @@ Function SolveLabyrinth {
         } ElseIf($progress -gt $progressmax) {
             $progressmax=$Progress+1
             $global:labyrinth[$x][$y]+= 240 - ($global:labyrinth[$x][$y] -band 240)
-            If($Global:DrawWhileSearching){
-                $global:labyrinth[$x][$y]+= 1024
+            If($global:DrawWhileSolving){
+                $global:labyrinth[$x][$y]+=1024
                 DrawExplorer -x $x -y $y
                 Start-Sleep -Milliseconds $global:PlayerPause
                 DrawExplorer -x $x -y $y
@@ -735,13 +750,13 @@ Function SolveLabyrinth {
             $global:moves--
             If (($global:labyrinth[$x][$y] -band 240) -ne 240) {
                 $global:labyrinth[$x][$y]+= 240 - ($global:labyrinth[$x][$y] -band 240)
-                If($Global:DrawWhileSearching){
-                    $global:labyrinth[$x][$y]+= 1024
+                If($global:DrawWhileSolving){
+                    $global:labyrinth[$x][$y]+=1024
                     DrawExplorer -x $x -y $y
                     Start-Sleep -Milliseconds $global:PlayerPause
                     DrawExplorer -x $x -y $y
                 }
-                }
+            }
             $x = $moved[$progress][0]
             $y = $moved[$progress][1]
             #Write-host "Backtrack: " -NoNewline
@@ -750,7 +765,7 @@ Function SolveLabyrinth {
     }
     #$global:labyrinth[$x][$y]-=64
     $prgCalc.Value = $global:maxmoves
-    If(-not $Global:DrawWhileSearching){DrawLabyrinth}
+    If(-not $global:DrawWhileSolving){DrawLabyrinth}
     #Write-Log "$global:CreateAlgoritm - $global:SolveAlgoritm - moves: $global:moves"
     $global:isSolving = $false
 }
@@ -764,8 +779,7 @@ Function ClearLabyrinth () {
 Function DrawExplorer {
     Param (
         $x,
-        $y,
-        [ValidateSet("NoDraw", "Draw","Raider")]$marker = 'Draw' 
+        $y
     )
     $offsetx = 25
     $offsety = 25
@@ -777,49 +791,50 @@ Function DrawExplorer {
     $RoomsizeY = $Scaley * $RoomScaleY
     $RoomScaleXX =1-$RoomScaleX
     $RoomScaleYY =1-$RoomScaleY
-    If($marker -eq 'Nodraw') {
-        $global:Graphics.FillRectangle($global:brushb,($x*$scalex)+$offsetx,($y*$scaleY+0.25)+$offsety,($RoomSizeX),($RoomsizeY))
-    }Else{
-        If ((($global:labyrinth[$x][$y] -band 240) -ne 0) -and (($global:labyrinth[$x][$y] -band 240) -ne 240)) {
-            Switch($global:labyrinth[$x][$y]) {
-                {(16 -band $_) -eq 16} {
-                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,((($y)-$RoomScaleYY)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-                {(32 -band $_) -eq 32} {
-                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,((($y)+$RoomScaleYY)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-                {(64 -band $_) -eq 64} {
-                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushr,((($x)-$RoomScaleXX)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-                {(128 -band $_) -eq 128} {
-                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushr,((($x)+$RoomScaleXX)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
+    If ((($global:labyrinth[$x][$y] -band 240) -ne 0) -and (($global:labyrinth[$x][$y] -band 240) -ne 240)) {
+        Switch($global:labyrinth[$x][$y]) {
+            {(16 -band $_) -eq 16} {
+                $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,((($y)-$RoomScaleYY)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
             }
-        } Else {
-            Switch($global:labyrinth[$x][$y]) {
-                0 {
-                    $global:Graphics.FillRectangle($global:brushb,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,$ScaleX,$scaleY)
-                }
-                {(1 -band $_) -eq 1} {
-                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,(($y-0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-                {(2 -band $_) -eq 2} {
-                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-                {(4 -band $_) -eq 4} {
-                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushw,(($x-0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-                {(8 -band $_) -eq 8} {
-                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushw,(($x+0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
+            {(32 -band $_) -eq 32} {
+                $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,((($y)+$RoomScaleYY)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+            }
+            {(64 -band $_) -eq 64} {
+                $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                $global:Graphics.FillRectangle($global:brushr,((($x)-$RoomScaleXX)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+            }
+            {(128 -band $_) -eq 128} {
+                $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                $global:Graphics.FillRectangle($global:brushr,((($x)+$RoomScaleXX)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+            }
+            #Player
+            {(1024 -band $_) -eq 1024} {
+                $global:Graphics.FillRectangle($global:brushPlayer,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                $global:labyrinth[$x][$y]-= 1024
+            }
+        }
+    } Else {
+        Switch($global:labyrinth[$x][$y]) {
+            0 {
+                $global:Graphics.FillRectangle($global:brushb,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,$ScaleX,$scaleY)
+            }
+            {(1 -band $_) -eq 1} {
+                $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,(($y-0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+            }
+            {(2 -band $_) -eq 2} {
+                $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+            }
+            {(4 -band $_) -eq 4} {
+                $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                $global:Graphics.FillRectangle($global:brushw,(($x-0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+            }
+            {(8 -band $_) -eq 8} {
+                $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                $global:Graphics.FillRectangle($global:brushw,(($x+0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
             }
         }
         Switch($global:labyrinth[$x][$y]) {
@@ -835,13 +850,9 @@ Function DrawExplorer {
             {(512 -band $_) -eq 512} {
                 $global:Graphics.FillRectangle($global:brushfin,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
             }
-            #DeadEnds
-            {(1024 -band $_) -eq 1024} {
-                $global:Graphics.FillRectangle($global:brushPlayer,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                $global:labyrinth[$x][$y]-= 1024
-            }
         }
     }
+    $FrmLabyrinthian.Update()
     [System.Windows.Forms.Application]::DoEvents()
 }
 Function DrawLabyrinth {    
@@ -905,11 +916,12 @@ $FrmLabyrinthian.Add_SizeChanged({
     }
 })
 $btnOk.Add_Click({
-    SaveSettings
+    $FrmLabyrinthianSettings.Hide()
     $FrmLabyrinthianSettings.Close()
+    SaveSettings -Close
 })
 $btnApply.Add_Click({
-    SaveSettings
+    SaveSettings -Apply
 })
 $btnCancel.Add_Click({
     $FrmLabyrinthianSettings.Close()
@@ -928,21 +940,22 @@ $FrmLabyrinthian.Add_Shown({
     InitLabyrinth
 })
 $timTimer.Add_Tick({
-    If ($global:prevmoves -ne $global:moves){
-        $lblCalc.ForeColor ='Red';$lblCalc.Text = $global:moves
+    If ($global:isSolving){
+        $lblCalc.ForeColor ='Red'
+        $lblCalc.Text = $global:moves
+        $global:labyrinth[$global:PlayerX][$global:PlayerY]+=1024
     } Else {
         Switch ($global:timerticks){
             0 {$lblCalc.ForeColor ='Black';$lblCalc.Text = $global:CreateAlgoritm}
             1 {$lblCalc.ForeColor = 'Black';$lblCalc.Text = $global:SolveAlgoritm}
-            2 {$lblCalc.ForeColor ='Red';$lblCalc.Text = $global:moves}
-            3 {$lblCalc.ForeColor ='Lime';$lblCalc.Text = $global:maxmoves}
+            2 {$lblCalc.ForeColor ='GreenYellow';$lblCalc.Text = $global:maxmoves}
+            3 {$lblCalc.ForeColor ='Red';$lblCalc.Text = $global:moves}
             Default {$global:timerticks = -1}
         }
         $global:timerticks++
     }
     $FrmLabyrinthian.Update()
     [System.Windows.Forms.Application]::DoEvents()
-    $global:prevmoves = $global:moves
 })
 $FrmLabyrinthian.Add_FormClosed({
     $timTimer.Stop()
