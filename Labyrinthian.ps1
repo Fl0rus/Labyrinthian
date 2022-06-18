@@ -20,23 +20,24 @@ $global:brushr = New-Object Drawing.SolidBrush Tomato
 $global:brushlc = New-Object Drawing.SolidBrush WhiteSmoke
 $global:brushPlayer = New-Object Drawing.SolidBrush Red
 
-#Global settings
+#Global settings Create
 $Global:DrawWhileBuilding = $false
 $Global:DrawWhileSearching = $true
-$global:PlayerPause = 2
-$global:BuildPause=100
-$global:ClearLabBeforeSearching = $true
+$global:BuildPause= 20
 $global:Randomness = 3
-$global:Startpoints = @('Random','Center','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
-$global:Startpoint = 'Center'
-$Global:Finishpoints = @('Endpoint Random','Endpoint Last','Endpoint First','Random','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
-$global:Finishpoint = 'Endpoint First'
 $global:CreateAlgoritms =@('Depth-First','Kruskai','Prim','Wilson','Aldous-Broder')
 $global:CreateAlgoritm = 'Depth-First'
-$global:SolveAlgoritms =@('Straight Random','Straight Fixed','Random','Fixed','Radar')
+$global:Startpoints = @('Random','Center','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
+$global:Startpoint = 'Top-Left'
+$Global:Finishpoints = @('Endpoint Random','Endpoint Far','Endpoint Last','Endpoint First','Center','Random','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
+$global:Finishpoint = 'Endpoint Far'
+$global:Gaps = $false
+
+#Global settings Solve
+$global:PlayerPause = 2
+$global:SolveAlgoritms =@('Straight Random','Straight Fixed','Random','Fixed','Radar','Follow-Wall')
 $global:SolveAlgoritm = 'Radar'
-$global:gaps = $false
-$global:randomgaps = 0
+$global:ClearLabBeforeSolving = $true
 $global:moves = 0
 
 $FrmLabyrinthian                            = New-Object system.Windows.Forms.Form
@@ -118,12 +119,54 @@ For ($i=0;$i -lt $global:CreateAlgoritms.count;$i++) {
 }
 $cmbCreateAlgoritm.SelectedIndex= $global:CreateAlgoritmIndex
 
+$lblStartpoint = New-Object System.Windows.Forms.Label
+$lblStartpoint.AutoSize = $true
+$lblStartpoint.width = 70
+$lblStartpoint.height = 30
+$lblStartpoint.TextAlign = 16 #MiddleLeft
+$lblStartpoint.location = New-object System.Drawing.Point(10,70)
+$lblStartpoint.Text = "Start Point"
+
+$cmbStartpoint = New-Object System.Windows.Forms.ComboBox
+$cmbStartpoint.Width = 125
+$cmbStartpoint.Height = 30
+$cmbStartpoint.AutoSize = $true
+$cmbStartpoint.DropDownStyle = 2
+$cmbStartpoint.AutoCompleteMode  = 0
+$cmbStartpoint.location = New-object System.Drawing.Point(100,70)
+For ($i=0;$i -lt $global:Startpoints.count;$i++) {
+    [void]$cmbStartpoint.items.Add($global:Startpoints[$i])
+    If ($global:Startpoints[$i] -eq $global:startpoint) {$global:StartpointIndex =$i}
+}
+$cmbStartpoint.SelectedIndex= $global:StartpointIndex
+
+$lblFinishpoint = New-Object System.Windows.Forms.Label
+$lblFinishpoint.AutoSize = $true
+$lblFinishpoint.width = 70
+$lblFinishpoint.height = 30
+$lblFinishpoint.TextAlign = 16 #MiddleLeft
+$lblFinishpoint.location = New-object System.Drawing.Point(10,100)
+$lblFinishpoint.Text = "Finish Point"
+
+$cmbFinishpoint = New-Object System.Windows.Forms.ComboBox
+$cmbFinishpoint.Width = 125
+$cmbFinishpoint.Height = 30
+$cmbFinishpoint.AutoSize = $true
+$cmbFinishpoint.DropDownStyle = 2
+$cmbFinishpoint.AutoCompleteMode  = 0
+$cmbFinishpoint.location = New-object System.Drawing.Point(100,100)
+For ($i=0;$i -lt $global:Finishpoints.count;$i++) {
+    [void]$cmbFinishpoint.items.Add($global:Finishpoints[$i])
+    If ($global:Finishpoints[$i] -eq $global:Finishpoint) {$global:FinishpointIndex =$i}
+}
+$cmbFinishpoint.SelectedIndex= $global:FinishpointIndex
+
 $sldWidth = New-Object System.Windows.Forms.Trackbar
 $sldwidth.AutoSize = $true
 $sldwidth.Text = "Width"
 $sldWidth.width = 200
 $sldWidth.Height = 30
-$sldWidth.location = New-Object System.Drawing.Point(10,65)
+$sldWidth.location = New-Object System.Drawing.Point(10,145)
 $sldwidth.Maximum = 200
 $sldWidth.Minimum = 5
 $sldwidth.AutoSize = $True
@@ -134,14 +177,14 @@ $sldWidth.Orientation = 0
 $sldwidthNum = New-Object System.Windows.Forms.NumericUpDown
 $sldwidthNum.width = 45
 $sldwidthNum.Height = 30
-$sldwidthNum.Location = New-Object System.Drawing.Point(210,65)
+$sldwidthNum.Location = New-Object System.Drawing.Point(210,145)
 $sldwidthNum.Maximum = 200
 $sldwidthNum.Minimum = 5
 
 $lblWidth = New-Object System.Windows.Forms.Label
 $lblWidth.width = 50
 $lblWidth.height =30
-$lblWidth.location = New-object System.Drawing.Point(260,65)
+$lblWidth.location = New-object System.Drawing.Point(260,145)
 $lblWidth.Text = "Width"
 
 $sldHeight = New-Object System.Windows.Forms.Trackbar
@@ -149,7 +192,7 @@ $sldHeight.AutoSize = $true
 $sldHeight.Text = "Height"
 $sldHeight.width = 200
 $sldHeight.Height = 30
-$sldHeight.location = New-Object System.Drawing.Point(10,110)
+$sldHeight.location = New-Object System.Drawing.Point(10,200)
 $sldHeight.Maximum = 150
 $sldHeight.Minimum = 5
 $sldHeight.TickFrequency = 10
@@ -159,28 +202,28 @@ $sldHeight.Orientation = 0
 $sldHeightNum = New-Object System.Windows.Forms.NumericUpDown
 $sldHeightNum.width = 45
 $sldHeightNum.Height = 25
-$sldHeightNum.Location = New-Object System.Drawing.Point(210,110)
+$sldHeightNum.Location = New-Object System.Drawing.Point(210,200)
 $sldHeightNum.Maximum = 150
 $sldHeightNum.Minimum =5
 
 $lblHeight = New-Object System.Windows.Forms.Label
 $lblHeight.width = 50
 $lblHeight.height =30
-$lblHeight.location = New-object System.Drawing.Point(260,110)
+$lblHeight.location = New-object System.Drawing.Point(260,200)
 $lblHeight.Text = "Height"
 
 $lblRandom = New-Object System.Windows.Forms.Label
 $lblRandom.width = 80
 $lblRandom.height = 30
-$lblRandom.location = New-object System.Drawing.Point(10,160)
-$lblRandom.Text = "Randomness"
+$lblRandom.location = New-object System.Drawing.Point(10,245)
+$lblRandom.Text = "Randomness (Depth-First)"
 
 $sldRandom = New-Object System.Windows.Forms.Trackbar
 $sldRandom.AutoSize = $true
-$sldRandom.Text = "Randomness"
+$sldRandom.Text = "Randomness (Depth-First)"
 $sldRandom.width = 200
 $sldRandom.Height = 30
-$sldRandom.location = New-Object System.Drawing.Point(90,160)
+$sldRandom.location = New-Object System.Drawing.Point(90,245)
 $sldRandom.Maximum = 100
 $sldRandom.Minimum = 1
 $sldRandom.TickFrequency = 10
@@ -191,7 +234,7 @@ $sldRandom.Orientation = 0
 $sldRandomNum = New-Object System.Windows.Forms.NumericUpDown
 $sldRandomNum.width = 45
 $sldRandomNum.Height = 25
-$sldRandomNum.Location = New-Object System.Drawing.Point(300,160)
+$sldRandomNum.Location = New-Object System.Drawing.Point(300,245)
 $sldRandomNum.Maximum = 100
 $sldRandomNum.Minimum = 1
 
@@ -278,8 +321,6 @@ $FrmLabyrinthian.controls.AddRange(@(
 $tabSettings = New-Object System.Windows.Forms.TabControl
 $tabSettings.Location = New-Object System.Drawing.Point(0,0)
 $tabSettings.Appearance =0
-$tabSettings.Width = $FrmLabyrinthianSettings.Width -16
-$tabSettings.Height = $FrmLabyrinthianSettings.Height -90
 $tabSettings.BackColor = '#d3d3d3'
 $tabSettings.TabPages.Add('Create')
 $tabpageCreate = $tabSettings.Controls[0]
@@ -288,6 +329,8 @@ $tabpageSolve = $tabSettings.Controls[1]
 $tabCreatecontrols = @(
     $chkDrawLab,
     $lblCreateAlgoritm,$cmbCreateAlgoritm,
+    $lblStartpoint,$cmbStartpoint,
+    $lblFinishpoint,$cmbFinishpoint,
     $sldWidth,$sldwidthNum,$lblWidth,
     $sldHeight,$sldHeightNum,$lblHeight
     $sldRandom,$sldRandomNum,$lblRandom
@@ -313,7 +356,14 @@ Function ShowSettings(){
     $FrmLabyrinthianSettings.ClientSize                 = "400,400"
     $FrmLabyrinthianSettings.text                       = "Labyrinth settings"
     $FrmLabyrinthianSettings.TopMost                    = $true
-
+    $FrmLabyrinthianSettings.FormBorderStyle = 3 #https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.formborderstyle?view=windowsdesktop-6.0
+    $FrmLabyrinthianSettings.Showintaskbar = $false
+    $FrmLabyrinthianSettings.MinimizeBox = $false
+    $FrmLabyrinthianSettings.ControlBox = $false
+    
+    $tabSettings.Width = $FrmLabyrinthianSettings.Width -16
+    $tabSettings.Height = $FrmLabyrinthianSettings.Height -90
+    
     $chkDrawSol.Checked = $Global:DrawWhileSearching
     $chkDrawLab.Checked = $Global:DrawWhileBuilding
 
@@ -325,10 +375,9 @@ Function ShowSettings(){
     $sldSpeedNum.value = $global:PlayerPause
     $sldRandom.Value = $global:Randomness
     $sldRandomNum.Value = $global:Randomness
-    For ($i=0;$i -lt $global:SolveAlgoritms.count;$i++) {
-        If ($global:SolveAlgoritms[$i] -eq $global:SolveAlgoritm) {$global:SolveAlgoritmIndex=$i}
-    }
     $cmbSolveAlgoritm.SelectedItem = $global:SolveAlgoritmIndex
+    $cmbStartpoint.SelectedIndex = $global:StartpointIndex
+    $cmbFinishpoint.SelectedIndex = $global:FinishpointIndex 
     $FrmLabyrinthianSettings.StartPosition = 'CenterParent'
     $FrmLabyrinthianSettings.Update()
     $FrmLabyrinthianSettings.ShowDialog()
@@ -349,8 +398,25 @@ Function SaveSettings {
         $lblCalc.Text = $global:SolveAlgoritm
         $global:moves = 0
     }
-}
+    $global:Startpoint = $cmbStartpoint.SelectedItem
+    $global:StartpointIndex = $cmbStartpoint.SelectedIndex
+    $global:Finishpoint = $cmbFinishpoint.SelectedItem
+    $global:FinishpointIndex = $cmbFinishpoint.SelectedIndex
 
+}
+Function InitLabyrinth(){
+    #Draw stuff prep
+    [System.Collections.ArrayList]$global:labyrinth = @()
+    #$Size =  $global:SizeX *  $global:SizeY
+    For($i=0;$i -lt $global:SizeX;$i++) {
+        $global:labyrinth += ,(@()) 
+        For ($o=0;$o -lt $global:SizeY;$o++) {
+            $global:labyrinth[$i] += 0
+        }
+    }
+    $global:Graphics = $FrmLabyrinthian.CreateGraphics()
+    $prgcalc.width = $FrmLabyrinthian.Width-225
+}
 Function CreateLabyrinth () {
     #Fill labyrinth matrix array
     #ClearLabyrinth
@@ -465,143 +531,40 @@ Function CreateLabyrinth () {
             #Write-host "Step $pointer = Niewe scan op punt $x $y"
         }
     }
-    $BtnSolveLabyrinth.Enabled = $true
-    If($global:randomgaps -gt 0) {
-        For($i=0;$i -le $randomgaps;$i++) {
-            $x = Get-Random -Minimum 1 -Maximum ($global:SizeX-1)
-            $y = Get-Random -Minimum 1 -Maximum ($global:SizeY-1)
-            $global:labyrinth[$x][$y]+= (15 - $global:labyrinth[$x][$y] -band 15)
-        }
-    }
     Switch ($Global:Finishpoint){
         'Endpoint Random'{
             $endpoint=$endpoints[(Get-Random -Minimum 0 -Maximum ($endpoints.Count-1))]
             $global:Finish=@($endpoint[0],$endpoint[1])
         }
+        'Endpoint Far' {
+            $maxdistance=0
+            ForEach($endpoint in $endpoints){
+                $distance = [math]::abs(($endpoint[0]+$endpoint[1])-($global:start[0]+$global:start[1]))
+                If($distance -gt $maxdistance) {
+                    $maxdistance = $distance 
+                    $global:Finish=$endpoint
+                }
+            }
+        }
         'Endpoint Last' {
-            $endpoint=$endpoints[($endpoints.Count-1)]
-            $global:Finish=@($endpoint[0],$endpoint[1])
+            $global:Finish=$endpoints[($endpoints.Count-1)]
         }
         'Endpoint First' {
-            $endpoint=$endpoints[0]
-            $global:Finish=@($endpoint[0],$endpoint[1])
+            $global:Finish=$endpoints[0]
         }
+        'Center' {
+            $global:Finish=@([math]::Round(($global:SizeX-1)/2),[math]::Round(($global:SizeY-1)/2))
+        }
+        'Random'{
+            $global:Finish=@(Get-Random -Minimum 1 -Maximum ($global:SizeX-1),Get-Random -Minimum 1 -Maximum ($global:SizeY-1))        }
+        'Top-Left' {$global:Finish=@(0,0)}
+        'Top-Right'{$global:Finish=@(($global:SizeX-1),0)}
+        'Bottom-Right'{$global:Finish=@(($global:SizeX-1),($global:SizeY-1))}
+        'Bottom-Left'{$global:Finish=@(0,($global:SizeY-1))}
     }
     $global:labyrinth[$global:Finish[0]][$global:Finish[1]] = 512 #finish
     If($Global:DrawWhileBuilding){DrawExplorer -x $global:Finish[0] -y $global:Finish[1]}
     $Global:FirstSolve = $true
-}
-Function InitLabyrinth(){
-    #Draw stuff prep
-    [System.Collections.ArrayList]$global:labyrinth = @()
-    #$Size =  $global:SizeX *  $global:SizeY
-    For($i=0;$i -lt $global:SizeX;$i++) {
-        $global:labyrinth += ,(@()) 
-        For ($o=0;$o -lt $global:SizeY;$o++) {
-            $global:labyrinth[$i] += 0
-        }
-    }
-    $global:Graphics = $FrmLabyrinthian.CreateGraphics()
-    $prgcalc.width = $FrmLabyrinthian.Width-225
-}
-Function ClearLabyrinth () {
-    #$FrmLabyrinthian.Refresh()
-    $global:brushb = New-Object Drawing.SolidBrush Gray
-    $global:Graphics = $FrmLabyrinthian.CreateGraphics()
-    $global:Graphics.FillRectangle($global:brushb,0,0,$FrmLabyrinthian.Width,$FrmLabyrinthian.Height)
-    #$FrmLabyrinthian.Update()
-}
-Function DrawExplorer {
-    Param (
-        $x,
-        $y,
-        [ValidateSet("NoDraw", "Draw","Raider")]$marker = 'Draw' 
-    )
-    $offsetx = 25
-    $offsety = 25
-    $ScaleX = (($FrmLabyrinthian.Width-($offsetx*2))/ $global:SizeX)
-    $ScaleY= ((($FrmLabyrinthian.Height - 25)-($offsety*2))/ $global:SizeY)
-    $RoomScaleX = 0.75
-    $RoomScaleY = 0.75
-    $RoomSizeX = $ScaleX * $RoomScaleX
-    $RoomsizeY = $Scaley * $RoomScaleY
-    $RoomScaleXX =1-$RoomScaleX
-    $RoomScaleYY =1-$RoomScaleY
-    If($marker -eq 'Nodraw') {
-        $global:Graphics.FillRectangle($global:brushb,($x*$scalex)+$offsetx,($y*$scaleY+0.25)+$offsety,($RoomSizeX),($RoomsizeY))
-    }Else{
-        If ((($global:labyrinth[$x][$y] -band 240) -ne 0) -and (($global:labyrinth[$x][$y] -band 240) -ne 240)) {
-            Switch($global:labyrinth[$x][$y]) {
-                {(16 -band $_) -eq 16} {
-                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,((($y)-$RoomScaleYY)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-                {(32 -band $_) -eq 32} {
-                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,((($y)+$RoomScaleYY)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-                {(64 -band $_) -eq 64} {
-                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushr,((($x)-$RoomScaleXX)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-                {(128 -band $_) -eq 128} {
-                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushr,((($x)+$RoomScaleXX)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-            }
-        } Else {
-            Switch($global:labyrinth[$x][$y]) {
-                0 {
-                    $global:Graphics.FillRectangle($global:brushb,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,$ScaleX,$scaleY)
-                }
-                {(1 -band $_) -eq 1} {
-                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,(($y-0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-                {(2 -band $_) -eq 2} {
-                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-                {(4 -band $_) -eq 4} {
-                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushw,(($x-0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-                {(8 -band $_) -eq 8} {
-                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                    $global:Graphics.FillRectangle($global:brushw,(($x+0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                }
-            }
-        }
-        Switch($global:labyrinth[$x][$y]) {
-            #Breadcrumbs
-            {(240 -band $_) -eq 240} {
-                $global:Graphics.FillRectangle($global:brushlc,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-            }
-            #Start
-            {(256 -band $_) -eq 256} {
-                $global:Graphics.FillRectangle($global:brushg,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-            }
-            #Finish
-            {(512 -band $_) -eq 512} {
-                $global:Graphics.FillRectangle($global:brushfin,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-            }
-            #DeadEnds
-            {(1024 -band $_) -eq 1024} {
-                $global:Graphics.FillRectangle($global:brushPlayer,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
-                $global:labyrinth[$x][$y]-= 1024
-            }
-        }
-    }
-    [System.Windows.Forms.Application]::DoEvents()
-}
-Function DrawLabyrinth {    
-    Param ()
-    For($y=0;$y -lt  $global:SizeY;$y++) { 
-        For($x=0;$x -lt  $global:SizeX;$x++) {
-            DrawExplorer -x $x -y $y
-        }
-    }   
-    $FrmLabyrinthian.Update()
 }
 Function SolveLabyrinth {
     Param ()
@@ -615,7 +578,7 @@ Function SolveLabyrinth {
         }
     }
     #ClearLabyrinth
-    If ($global:ClearLabBeforeSearching -and -not $Global:FirstSolve) {DrawLabyrinth}
+    If ($global:ClearLabBeforeSolving -and -not $Global:FirstSolve) {DrawLabyrinth}
     $Global:FirstSolve = $false
     #Write-host "$global:start $global:finish"
     $x =$global:start[0]
@@ -723,7 +686,106 @@ Function SolveLabyrinth {
     #$global:labyrinth[$x][$y]-=64
     $prgCalc.Value = $maxmoves
     If(-not $Global:DrawWhileSearching){DrawLabyrinth}
-    Write-Host "$global:SolveAlgoritm - moves: $global:moves"
+    Write-Host "$global:CreateAlgoritm - $global:SolveAlgoritm - moves: $global:moves"
+}
+Function ClearLabyrinth () {
+    #$FrmLabyrinthian.Refresh()
+    $global:brushb = New-Object Drawing.SolidBrush Gray
+    $global:Graphics = $FrmLabyrinthian.CreateGraphics()
+    $global:Graphics.FillRectangle($global:brushb,0,0,$FrmLabyrinthian.Width,$FrmLabyrinthian.Height)
+    #$FrmLabyrinthian.Update()
+}
+Function DrawExplorer {
+    Param (
+        $x,
+        $y,
+        [ValidateSet("NoDraw", "Draw","Raider")]$marker = 'Draw' 
+    )
+    $offsetx = 25
+    $offsety = 25
+    $ScaleX = (($FrmLabyrinthian.Width-($offsetx*2))/ $global:SizeX)
+    $ScaleY= ((($FrmLabyrinthian.Height - 25)-($offsety*2))/ $global:SizeY)
+    $RoomScaleX = 0.75
+    $RoomScaleY = 0.75
+    $RoomSizeX = $ScaleX * $RoomScaleX
+    $RoomsizeY = $Scaley * $RoomScaleY
+    $RoomScaleXX =1-$RoomScaleX
+    $RoomScaleYY =1-$RoomScaleY
+    If($marker -eq 'Nodraw') {
+        $global:Graphics.FillRectangle($global:brushb,($x*$scalex)+$offsetx,($y*$scaleY+0.25)+$offsety,($RoomSizeX),($RoomsizeY))
+    }Else{
+        If ((($global:labyrinth[$x][$y] -band 240) -ne 0) -and (($global:labyrinth[$x][$y] -band 240) -ne 240)) {
+            Switch($global:labyrinth[$x][$y]) {
+                {(16 -band $_) -eq 16} {
+                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,((($y)-$RoomScaleYY)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                }
+                {(32 -band $_) -eq 32} {
+                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,((($y)+$RoomScaleYY)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                }
+                {(64 -band $_) -eq 64} {
+                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($global:brushr,((($x)-$RoomScaleXX)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                }
+                {(128 -band $_) -eq 128} {
+                    $global:Graphics.FillRectangle($global:brushr,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($global:brushr,((($x)+$RoomScaleXX)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                }
+            }
+        } Else {
+            Switch($global:labyrinth[$x][$y]) {
+                0 {
+                    $global:Graphics.FillRectangle($global:brushb,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,$ScaleX,$scaleY)
+                }
+                {(1 -band $_) -eq 1} {
+                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,(($y-0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                }
+                {(2 -band $_) -eq 2} {
+                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,(($y+0.25)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                }
+                {(4 -band $_) -eq 4} {
+                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($global:brushw,(($x-0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                }
+                {(8 -band $_) -eq 8} {
+                    $global:Graphics.FillRectangle($global:brushw,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                    $global:Graphics.FillRectangle($global:brushw,(($x+0.25)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                }
+            }
+        }
+        Switch($global:labyrinth[$x][$y]) {
+            #Breadcrumbs
+            {(240 -band $_) -eq 240} {
+                $global:Graphics.FillRectangle($global:brushlc,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+            }
+            #Start
+            {(256 -band $_) -eq 256} {
+                $global:Graphics.FillRectangle($global:brushg,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+            }
+            #Finish
+            {(512 -band $_) -eq 512} {
+                $global:Graphics.FillRectangle($global:brushfin,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+            }
+            #DeadEnds
+            {(1024 -band $_) -eq 1024} {
+                $global:Graphics.FillRectangle($global:brushPlayer,($x*$scalex)+$offsetx,($y*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                $global:labyrinth[$x][$y]-= 1024
+            }
+        }
+    }
+    [System.Windows.Forms.Application]::DoEvents()
+}
+Function DrawLabyrinth {    
+    Param ()
+    For($y=0;$y -lt  $global:SizeY;$y++) { 
+        For($x=0;$x -lt  $global:SizeX;$x++) {
+            DrawExplorer -x $x -y $y
+        }
+    }   
+    $FrmLabyrinthian.Update()
 }
 function ChangeSizeX () {
     $sldwidthNum.Value = $sldWidth.Value
@@ -751,12 +813,22 @@ function ChangeRandomNum () {
 }
 
 $BtnCreateLabyrinth.Add_Click({
+    $BtnCreateLabyrinth.Enabled = $false
+    $BtnSolveLabyrinth.Enabled = $false
     InitLabyrinth
     ClearLabyrinth
     CreateLabyrinth
     If(-not $Global:DrawWhilebuilding){DrawLabyrinth}
+    $BtnCreateLabyrinth.Enabled = $true
+    $BtnSolveLabyrinth.Enabled = $true
 })
-$BtnSolveLabyrinth.Add_Click({ SolveLabyrinth })
+$BtnSolveLabyrinth.Add_Click({
+    $BtnCreateLabyrinth.Enabled = $false
+    $BtnSolveLabyrinth.Enabled = $false
+    SolveLabyrinth
+    $BtnCreateLabyrinth.Enabled = $true
+    $BtnSolveLabyrinth.Enabled = $true
+})
 $BtnSettings.Add_Click({ ShowSettings })
 $sldWidth.Add_Scroll({ ChangeSizeX })
 $sldwidthNum.Add_ValueChanged({ChangeSizeXNum})
@@ -790,8 +862,12 @@ $lblCalc.Add_Click({
     $lblCalc.Text = $global:SolveAlgoritm
 })
 $FrmLabyrinthian.Add_Shown({
+    $BtnCreateLabyrinth.Enabled = $false
+    $BtnSolveLabyrinth.Enabled = $false
     InitLabyrinth
     CreateLabyrinth
     If(-not $Global:DrawWhileBuilding){DrawLabyrinth}
+    $BtnCreateLabyrinth.Enabled = $true
+    $BtnSolveLabyrinth.Enabled = $true
 })
 [void][System.Windows.Forms.Application]::Run($FrmLabyrinthian)
