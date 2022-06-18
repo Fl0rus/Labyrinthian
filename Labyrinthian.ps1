@@ -26,7 +26,9 @@ $global:ClearLabBeforeSearching = $true
 $global:Randomness = 3
 $global:SolveAlgoritms =@('Straight Random','Straight Fixed','Random','Fixed','Radar')
 $global:SolveAlgoritm = 'Straight Random'
-$global:moves = '-'
+$global:gaps = $false
+$global:randomgaps = 0
+$global:moves = 0
 
 
 Clear-Host
@@ -359,10 +361,10 @@ Function CreateLabyrinth () {
         } ElseIf ($pointer -gt $pointermax) {
             $pointermax=$pointer+1
             $endpoints.Add(@($x,$y))
-            If (($x -lt $global:SizeX) -and ($x -gt 0) -and ($y -gt 0) -and ($y -lt $global:SizeY)){
+            If (($x -lt $global:SizeX) -and ($x -gt 0) -and ($y -gt 0) -and ($y -lt $global:SizeY) -and $global:gaps){
                 $global:labyrinth[$x][$y] += $previousmove
-                If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
             }
+            If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
         } Else {
             $pointer--
             $x = $moved[$pointer][0]
@@ -371,8 +373,14 @@ Function CreateLabyrinth () {
         }
     }
     $BtnSolveLabyrinth.Enabled = $true
+    If($global:randomgaps -gt 0) {
+        For($i=0;$i -le $randomgaps;$i++) {
+            $x = Get-Random -Minimum 1 -Maximum ($global:SizeX-1)
+            $y = Get-Random -Minimum 1 -Maximum ($global:SizeY-1)
+            $global:labyrinth[$x][$y]+= (15 - $global:labyrinth[$x][$y] -band 15)
+        }
+    }
     $endpoint=$endpoints[(Get-Random -Minimum 0 -Maximum $endpoints.Count)]
-
     $global:labyrinth[$endpoint[0]][$endpoint[1]] = 512 #finish
     $global:Finish=@($endpoint[0],$endpoint[1])
     If($Global:DrawWhileBuilding){DrawExplorer -x $endpoint[0] -y $endpoint[1]}
