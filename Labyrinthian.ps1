@@ -2,6 +2,8 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName PresentationCore,PresentationFramework
 [System.Windows.Forms.Application]::EnableVisualStyles()
+Clear-Host
+
 $Global:FrmSizeX = 640
 $Global:FrmSizeY = 480
 #Initial labyrint width & Height
@@ -22,9 +24,14 @@ $global:brushPlayer = New-Object Drawing.SolidBrush Red
 $Global:DrawWhileBuilding = $false
 $Global:DrawWhileSearching = $true
 $global:PlayerPause = 2
+$global:BuildPause=100
 $global:ClearLabBeforeSearching = $true
 $global:Randomness = 3
-$global:CreateAlgoritms =@('Depth-First','Kruskai','Prim''s','Fixed','Radar')
+$global:Startpoints = @('Random','Center','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
+$global:Startpoint = 'Center'
+$Global:Finishpoints = @('Endpoint Random','Endpoint Last','Endpoint First','Random','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
+$global:Finishpoint = 'Endpoint First'
+$global:CreateAlgoritms =@('Depth-First','Kruskai','Prim','Wilson','Aldous-Broder')
 $global:CreateAlgoritm = 'Depth-First'
 $global:SolveAlgoritms =@('Straight Random','Straight Fixed','Random','Fixed','Radar')
 $global:SolveAlgoritm = 'Radar'
@@ -32,8 +39,6 @@ $global:gaps = $false
 $global:randomgaps = 0
 $global:moves = 0
 
-
-Clear-Host
 $FrmLabyrinthian                            = New-Object system.Windows.Forms.Form
 $FrmLabyrinthian.ClientSize                 = "$Global:FrmSizeX,$Global:FrmSizeY"
 $FrmLabyrinthian.text                       = "Labyrinth"
@@ -108,7 +113,7 @@ $cmbCreateAlgoritm.DropDownStyle = 2
 $cmbCreateAlgoritm.AutoCompleteMode  = 0
 $cmbCreateAlgoritm.location = New-object System.Drawing.Point(100,35)
 For ($i=0;$i -lt $global:CreateAlgoritms.count;$i++) {
-    $cmbCreateAlgoritm.items.Add($global:CreateAlgoritms[$i])
+    [void]$cmbCreateAlgoritm.items.Add($global:CreateAlgoritms[$i])
     If ($global:CreateAlgoritms[$i] -eq $global:CreateAlgoritm) {$global:CreateAlgoritmIndex =$i}
 }
 $cmbCreateAlgoritm.SelectedIndex= $global:CreateAlgoritmIndex
@@ -240,7 +245,7 @@ $cmbSolveAlgoritm.DropDownStyle = 2
 $cmbSolveAlgoritm.AutoCompleteMode  = 0
 $cmbSolveAlgoritm.location = New-object System.Drawing.Point(95,90)
 For ($i=0;$i -lt $global:SolveAlgoritms.count;$i++) {
-    $cmbSolveAlgoritm.items.Add($global:SolveAlgoritms[$i])
+    [void]$cmbSolveAlgoritm.items.Add($global:SolveAlgoritms[$i])
     If ($global:SolveAlgoritms[$i] -eq $global:SolveAlgoritm) {$global:SolveAlgoritmIndex =$i}
 }
 $cmbSolveAlgoritm.SelectedIndex= $global:SolveAlgoritmIndex
@@ -350,8 +355,35 @@ Function CreateLabyrinth () {
     #Fill labyrinth matrix array
     #ClearLabyrinth
     #Create Labyrinth
-    $x = Get-Random -Minimum 1 -Maximum ($global:SizeX-1)
-    $y = Get-Random -Minimum 1 -Maximum ($global:SizeY-1)
+    Switch ($global:Startpoint) {
+        'Random'{
+            $x = Get-Random -Minimum 1 -Maximum ($global:SizeX-1)
+            $y = Get-Random -Minimum 1 -Maximum ($global:SizeY-1)
+        }
+        'Center' {
+            $x = [math]::Round(($global:SizeX-1)/2)
+            $y = [math]::Round(($global:SizeY-1)/2)
+        }
+        'Top-Left'{
+            $x = 0
+            $y = 0
+        }
+        'Top-Right'{
+            $x = $global:SizeX-1
+            $y = 0
+        }
+        'Bottom-Right'{
+            $x = $global:SizeX-1
+            $y = $global:SizeY-1
+        }
+        'Bottom-Left'{
+            $x = 0
+            $y = $global:SizeY-1
+        }
+        default{
+            Write-Host "$global:startpoint not in set"
+        }
+    }
     $Global:Start=@($x,$y)
     $global:labyrinth[$x][$y] = 256 #start
     $pointer=0
@@ -411,7 +443,10 @@ Function CreateLabyrinth () {
             $global:labyrinth[$x][$y] += $value
             #Write-host "Step $pointer = Moved to $x $y"
             $prgCalc.Value = $progress
-            If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
+            If($Global:DrawWhileBuilding){
+                DrawExplorer -x $x -y $y
+                Start-Sleep -Milliseconds $global:BuildPause
+            }
             $progress++
         } ElseIf ($pointer -gt $pointermax) {
             $pointermax=$pointer+1
@@ -419,7 +454,10 @@ Function CreateLabyrinth () {
             If (($x -lt $global:SizeX) -and ($x -gt 0) -and ($y -gt 0) -and ($y -lt $global:SizeY) -and $global:gaps){
                 $global:labyrinth[$x][$y] += $previousmove
             }
-            If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
+            If($Global:DrawWhileBuilding){
+                DrawExplorer -x $x -y $y
+                Start-Sleep -Milliseconds $global:BuildPause
+            }
         } Else {
             $pointer--
             $x = $moved[$pointer][0]
@@ -435,10 +473,22 @@ Function CreateLabyrinth () {
             $global:labyrinth[$x][$y]+= (15 - $global:labyrinth[$x][$y] -band 15)
         }
     }
-    $endpoint=$endpoints[(Get-Random -Minimum 0 -Maximum $endpoints.Count)]
-    $global:labyrinth[$endpoint[0]][$endpoint[1]] = 512 #finish
-    $global:Finish=@($endpoint[0],$endpoint[1])
-    If($Global:DrawWhileBuilding){DrawExplorer -x $endpoint[0] -y $endpoint[1]}
+    Switch ($Global:Finishpoint){
+        'Endpoint Random'{
+            $endpoint=$endpoints[(Get-Random -Minimum 0 -Maximum ($endpoints.Count-1))]
+            $global:Finish=@($endpoint[0],$endpoint[1])
+        }
+        'Endpoint Last' {
+            $endpoint=$endpoints[($endpoints.Count-1)]
+            $global:Finish=@($endpoint[0],$endpoint[1])
+        }
+        'Endpoint First' {
+            $endpoint=$endpoints[0]
+            $global:Finish=@($endpoint[0],$endpoint[1])
+        }
+    }
+    $global:labyrinth[$global:Finish[0]][$global:Finish[1]] = 512 #finish
+    If($Global:DrawWhileBuilding){DrawExplorer -x $global:Finish[0] -y $global:Finish[1]}
     $Global:FirstSolve = $true
 }
 Function InitLabyrinth(){
