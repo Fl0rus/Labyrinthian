@@ -24,6 +24,8 @@ $Global:DrawWhileSearching = $true
 $global:PlayerPause = 2
 $global:ClearLabBeforeSearching = $true
 $global:Randomness = 3
+$global:CreateAlgoritms =@('Depth-First','Kruskai','Prim''s','Fixed','Radar')
+$global:CreateAlgoritm = 'Depth-First'
 $global:SolveAlgoritms =@('Straight Random','Straight Fixed','Random','Fixed','Radar')
 $global:SolveAlgoritm = 'Radar'
 $global:gaps = $false
@@ -82,7 +84,7 @@ $lblCalc.Location = New-Object System.Drawing.Point(225,0)
 $lblCalc.Text = $global:SolveAlgoritm
 #$lblCalc.BackColor = 'Transparant'
 
-#settings controls
+#settings Create controls
 $chkDrawLab = New-Object System.Windows.Forms.Checkbox
 $chkDrawLab.AutoSize = $true
 $chkDrawLab.Width = 25
@@ -90,19 +92,33 @@ $chkDrawLab.Height = 25
 $chkDrawLab.Text = "Draw while building"
 $chkDrawLab.Location = New-Object System.Drawing.Point(10,10)
 
-$chkDrawSol = New-Object System.Windows.Forms.Checkbox
-$chkDrawSol.AutoSize = $true
-$chkDrawSol.Width = 25
-$chkDrawSol.Height = 25
-$chkDrawSol.Text = "Draw while solving"
-$chkDrawSol.Location = New-Object System.Drawing.Point(10,30)
+$lblCreateAlgoritm = New-Object System.Windows.Forms.Label
+$lblCreateAlgoritm.AutoSize = $true
+$lblCreateAlgoritm.width = 70
+$lblCreateAlgoritm.height = 30
+$lblCreateAlgoritm.TextAlign = 16 #MiddleLeft
+$lblCreateAlgoritm.location = New-object System.Drawing.Point(10,35)
+$lblCreateAlgoritm.Text = "Create Algoritm"
+
+$cmbCreateAlgoritm = New-Object System.Windows.Forms.ComboBox
+$cmbCreateAlgoritm.Width = 125
+$cmbCreateAlgoritm.Height = 30
+$cmbCreateAlgoritm.AutoSize = $true
+$cmbCreateAlgoritm.DropDownStyle = 2
+$cmbCreateAlgoritm.AutoCompleteMode  = 0
+$cmbCreateAlgoritm.location = New-object System.Drawing.Point(100,35)
+For ($i=0;$i -lt $global:CreateAlgoritms.count;$i++) {
+    $cmbCreateAlgoritm.items.Add($global:CreateAlgoritms[$i])
+    If ($global:CreateAlgoritms[$i] -eq $global:CreateAlgoritm) {$global:CreateAlgoritmIndex =$i}
+}
+$cmbCreateAlgoritm.SelectedIndex= $global:CreateAlgoritmIndex
 
 $sldWidth = New-Object System.Windows.Forms.Trackbar
 $sldwidth.AutoSize = $true
 $sldwidth.Text = "Width"
 $sldWidth.width = 200
 $sldWidth.Height = 30
-$sldWidth.location = New-Object System.Drawing.Point(10,60)
+$sldWidth.location = New-Object System.Drawing.Point(10,65)
 $sldwidth.Maximum = 200
 $sldWidth.Minimum = 5
 $sldwidth.AutoSize = $True
@@ -113,14 +129,14 @@ $sldWidth.Orientation = 0
 $sldwidthNum = New-Object System.Windows.Forms.NumericUpDown
 $sldwidthNum.width = 45
 $sldwidthNum.Height = 30
-$sldwidthNum.Location = New-Object System.Drawing.Point(210,60)
+$sldwidthNum.Location = New-Object System.Drawing.Point(210,65)
 $sldwidthNum.Maximum = 200
 $sldwidthNum.Minimum = 5
 
 $lblWidth = New-Object System.Windows.Forms.Label
 $lblWidth.width = 50
 $lblWidth.height =30
-$lblWidth.location = New-object System.Drawing.Point(260,60)
+$lblWidth.location = New-object System.Drawing.Point(260,65)
 $lblWidth.Text = "Width"
 
 $sldHeight = New-Object System.Windows.Forms.Trackbar
@@ -128,7 +144,7 @@ $sldHeight.AutoSize = $true
 $sldHeight.Text = "Height"
 $sldHeight.width = 200
 $sldHeight.Height = 30
-$sldHeight.location = New-Object System.Drawing.Point(10,100)
+$sldHeight.location = New-Object System.Drawing.Point(10,110)
 $sldHeight.Maximum = 150
 $sldHeight.Minimum = 5
 $sldHeight.TickFrequency = 10
@@ -138,22 +154,63 @@ $sldHeight.Orientation = 0
 $sldHeightNum = New-Object System.Windows.Forms.NumericUpDown
 $sldHeightNum.width = 45
 $sldHeightNum.Height = 25
-$sldHeightNum.Location = New-Object System.Drawing.Point(210,100)
+$sldHeightNum.Location = New-Object System.Drawing.Point(210,110)
 $sldHeightNum.Maximum = 150
 $sldHeightNum.Minimum =5
 
 $lblHeight = New-Object System.Windows.Forms.Label
 $lblHeight.width = 50
 $lblHeight.height =30
-$lblHeight.location = New-object System.Drawing.Point(260,100)
+$lblHeight.location = New-object System.Drawing.Point(260,110)
 $lblHeight.Text = "Height"
+
+$lblRandom = New-Object System.Windows.Forms.Label
+$lblRandom.width = 80
+$lblRandom.height = 30
+$lblRandom.location = New-object System.Drawing.Point(10,160)
+$lblRandom.Text = "Randomness"
+
+$sldRandom = New-Object System.Windows.Forms.Trackbar
+$sldRandom.AutoSize = $true
+$sldRandom.Text = "Randomness"
+$sldRandom.width = 200
+$sldRandom.Height = 30
+$sldRandom.location = New-Object System.Drawing.Point(90,160)
+$sldRandom.Maximum = 100
+$sldRandom.Minimum = 1
+$sldRandom.TickFrequency = 10
+$sldRandom.TickStyle = 2
+$sldRandom.Orientation = 0
+
+
+$sldRandomNum = New-Object System.Windows.Forms.NumericUpDown
+$sldRandomNum.width = 45
+$sldRandomNum.Height = 25
+$sldRandomNum.Location = New-Object System.Drawing.Point(300,160)
+$sldRandomNum.Maximum = 100
+$sldRandomNum.Minimum = 1
+
+
+#Solve Settings controls
+$chkDrawSol = New-Object System.Windows.Forms.Checkbox
+$chkDrawSol.AutoSize = $true
+$chkDrawSol.Width = 25
+$chkDrawSol.Height = 25
+$chkDrawSol.Text = "Draw while solving"
+$chkDrawSol.Location = New-Object System.Drawing.Point(10,10)
+
+$lblSpeed = New-Object System.Windows.Forms.Label
+$lblSpeed.width = 50
+$lblSpeed.height =30
+$lblSpeed.location = New-object System.Drawing.Point(10,40)
+$lblSpeed.Text = "Speed"
 
 $sldSpeed = New-Object System.Windows.Forms.Trackbar
 $sldSpeed.AutoSize = $true
 $sldSpeed.Text = "Speed"
 $sldSpeed.width = 200
 $sldSpeed.Height = 30
-$sldSpeed.location = New-Object System.Drawing.Point(10,150)
+$sldSpeed.location = New-Object System.Drawing.Point(60,40)
 $sldSpeed.Maximum = 250
 $sldSpeed.Minimum = 0
 $sldSpeed.TickFrequency = 10
@@ -163,47 +220,16 @@ $sldSpeed.Orientation = 0
 $sldSpeedNum = New-Object System.Windows.Forms.NumericUpDown
 $sldSpeedNum.width = 45
 $sldSpeedNum.Height = 25
-$sldSpeedNum.Location = New-Object System.Drawing.Point(210,150)
+$sldSpeedNum.Location = New-Object System.Drawing.Point(270,40)
 $sldSpeedNum.Maximum = 250
 $sldSpeedNum.Minimum =0
-
-$lblSpeed = New-Object System.Windows.Forms.Label
-$lblSpeed.width = 50
-$lblSpeed.height =30
-$lblSpeed.location = New-object System.Drawing.Point(260,150)
-$lblSpeed.Text = "Speed"
-
-$sldRandom = New-Object System.Windows.Forms.Trackbar
-$sldRandom.AutoSize = $true
-$sldRandom.Text = "Randomness"
-$sldRandom.width = 200
-$sldRandom.Height = 30
-$sldRandom.location = New-Object System.Drawing.Point(10,200)
-$sldRandom.Maximum = 100
-$sldRandom.Minimum = 1
-$sldRandom.TickFrequency = 10
-$sldRandom.TickStyle = 2
-$sldRandom.Orientation = 0
-
-$sldRandomNum = New-Object System.Windows.Forms.NumericUpDown
-$sldRandomNum.width = 45
-$sldRandomNum.Height = 25
-$sldRandomNum.Location = New-Object System.Drawing.Point(210,200)
-$sldRandomNum.Maximum = 100
-$sldRandomNum.Minimum = 1
-
-$lblRandom = New-Object System.Windows.Forms.Label
-$lblRandom.width = 50
-$lblRandom.height =30
-$lblRandom.location = New-object System.Drawing.Point(260,200)
-$lblRandom.Text = "Randomness"
 
 $lblSolveAlgoritm = New-Object System.Windows.Forms.Label
 $lblSolveAlgoritm.AutoSize = $true
 $lblSolveAlgoritm.width = 70
 $lblSolveAlgoritm.height = 30
 $lblSolveAlgoritm.TextAlign = 16 #MiddleLeft
-$lblSolveAlgoritm.location = New-object System.Drawing.Point(10,250)
+$lblSolveAlgoritm.location = New-object System.Drawing.Point(10,90)
 $lblSolveAlgoritm.Text = "Solve Algoritm"
 
 $cmbSolveAlgoritm = New-Object System.Windows.Forms.ComboBox
@@ -212,14 +238,12 @@ $cmbSolveAlgoritm.Height = 30
 $cmbSolveAlgoritm.AutoSize = $true
 $cmbSolveAlgoritm.DropDownStyle = 2
 $cmbSolveAlgoritm.AutoCompleteMode  = 0
-$cmbSolveAlgoritm.location = New-object System.Drawing.Point(90,250)
-#$cmbSolveAlgoritm.DataSource = $global:SolveAlgoritms
+$cmbSolveAlgoritm.location = New-object System.Drawing.Point(95,90)
 For ($i=0;$i -lt $global:SolveAlgoritms.count;$i++) {
     $cmbSolveAlgoritm.items.Add($global:SolveAlgoritms[$i])
     If ($global:SolveAlgoritms[$i] -eq $global:SolveAlgoritm) {$global:SolveAlgoritmIndex =$i}
 }
 $cmbSolveAlgoritm.SelectedIndex= $global:SolveAlgoritmIndex
-Write-host $global:SolveAlgoritmIndex
 
 $btnOk = New-Object System.Windows.Forms.Button
 $btnOk.Height = 30
@@ -245,16 +269,38 @@ $btnCancel.Text = "Cancel"
 $FrmLabyrinthian.controls.AddRange(@(
     $BtnCreateLabyrinth,$BtnSolveLabyrinth,$BtnSettings,$prgCalc,$lblCalc
 ))
+#Tab controls for settings page
+$tabSettings = New-Object System.Windows.Forms.TabControl
+$tabSettings.Location = New-Object System.Drawing.Point(0,0)
+$tabSettings.Appearance =0
+$tabSettings.Width = $FrmLabyrinthianSettings.Width -16
+$tabSettings.Height = $FrmLabyrinthianSettings.Height -90
+$tabSettings.BackColor = '#d3d3d3'
+$tabSettings.TabPages.Add('Create')
+$tabpageCreate = $tabSettings.Controls[0]
+$tabSettings.TabPages.Add('Solve')
+$tabpageSolve = $tabSettings.Controls[1]
+$tabCreatecontrols = @(
+    $chkDrawLab,
+    $lblCreateAlgoritm,$cmbCreateAlgoritm,
+    $sldWidth,$sldwidthNum,$lblWidth,
+    $sldHeight,$sldHeightNum,$lblHeight
+    $sldRandom,$sldRandomNum,$lblRandom
+)
+$tabSolvecontrols = @(
+    $chkDrawSol,
+    $sldSpeed,$sldSpeedNum,$lblSpeed,
+    $lblSolveAlgoritm,$cmbSolveAlgoritm
+)
+
+foreach ($tabcreatecontrol in $tabcreatecontrols) {$tabpageCreate.Controls.Add($tabcreatecontrol)}
+foreach ($tabSolvecontrol in $tabSolvecontrols) {$tabpageSolve.Controls.Add($tabSolvecontrol)}
+
 $FrmLabyrinthianSettings = New-Object system.Windows.Forms.Form
 $FrmLabyrinthianSettings.BackColor                  = '#d3d3d3'
 $FrmLabyrinthianSettings.StartPosition              = 'Manual'
 $FrmLabyrinthianSettings.controls.AddRange(@(
-    $chkDrawLab,$chkDrawSol,
-    $sldWidth,$sldwidthNum,$lblWidth,
-    $sldHeight,$sldHeightNum,$lblHeight,
-    $sldSpeed,$sldSpeedNum,$lblSpeed,
-    $sldRandom,$sldRandomNum,$lblRandom,
-    $lblSolveAlgoritm,$cmbSolveAlgoritm,
+    $tabSettings,
     $btnok,$btnApply,$btnCancel
 ))
 
@@ -275,12 +321,9 @@ Function ShowSettings(){
     $sldRandom.Value = $global:Randomness
     $sldRandomNum.Value = $global:Randomness
     For ($i=0;$i -lt $global:SolveAlgoritms.count;$i++) {
-        If ($global:SolveAlgoritms[$i] -eq $global:SolveAlgoritm) {$x=$i}
+        If ($global:SolveAlgoritms[$i] -eq $global:SolveAlgoritm) {$global:SolveAlgoritmIndex=$i}
     }
-    $cmbSolveAlgoritm.SelectedItem = $x
-    $global:SolveAlgoritmIndex = $x
-    Write-Host $x
-    #$cmbSolveAlgoritm.SelectedItem = $global:SolveAlgoritmIndex
+    $cmbSolveAlgoritm.SelectedItem = $global:SolveAlgoritmIndex
     $FrmLabyrinthianSettings.StartPosition = 'CenterParent'
     $FrmLabyrinthianSettings.Update()
     $FrmLabyrinthianSettings.ShowDialog()
@@ -295,9 +338,9 @@ Function SaveSettings {
         $BtnSolveLabyrinth.Enabled=$false
     }
     $global:Randomness = $sldRandom.Value
-    If ($global:SolveAlgoritm -ne $cmbSolveAlgoritm.SelectedValue) {
-        $global:SolveAlgoritm = $cmbSolveAlgoritm.SelectedValue
-        $global:SolveAlgoritmIndex = $cmbSolveAlgoritm.SelectedItem
+    If ($global:SolveAlgoritm -ne $cmbSolveAlgoritm.SelectedItem) {
+        $global:SolveAlgoritm = $cmbSolveAlgoritm.SelectedItem
+        $global:SolveAlgoritmIndex = $cmbSolveAlgoritm.SelectedIndex
         $lblCalc.Text = $global:SolveAlgoritm
         $global:moves = 0
     }
