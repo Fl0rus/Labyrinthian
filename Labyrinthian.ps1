@@ -35,7 +35,8 @@ $global:Gaps = $false
 
 #Global settings Solve
 $global:PlayerPause = 2
-$global:SolveAlgoritms =@('Straight Random','Straight Fixed','Random','Fixed','Radar','Follow-Wall')
+$global:DeadEndFilling = $true
+$global:SolveAlgoritms =@('Radar','Follow-Wall','Straight Random','Straight Fixed','Random','Fixed')
 $global:SolveAlgoritm = 'Radar'
 $global:ClearLabBeforeSolving = $true
 $global:moves = 0
@@ -458,7 +459,7 @@ Function CreateLabyrinth () {
     $prgcalc.Minimum=0
     $prgCalc.Maximum=$global:SizeX*$global:SizeY
     [System.Collections.ArrayList]$moved = @()
-    [System.Collections.ArrayList]$endpoints = @()
+    [System.Collections.ArrayList]$global:endpoints = @()
     If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
     $previousmove = 0
     While($pointer -ge 0) {
@@ -516,7 +517,7 @@ Function CreateLabyrinth () {
             $progress++
         } ElseIf ($pointer -gt $pointermax) {
             $pointermax=$pointer+1
-            $endpoints.Add(@($x,$y))
+            $global:endpoints.Add(@($x,$y))
             If (($x -lt $global:SizeX) -and ($x -gt 0) -and ($y -gt 0) -and ($y -lt $global:SizeY) -and $global:gaps){
                 $global:labyrinth[$x][$y] += $previousmove
             }
@@ -533,12 +534,12 @@ Function CreateLabyrinth () {
     }
     Switch ($Global:Finishpoint){
         'Endpoint Random'{
-            $endpoint=$endpoints[(Get-Random -Minimum 0 -Maximum ($endpoints.Count-1))]
+            $endpoint=$global:endpoints[(Get-Random -Minimum 0 -Maximum ($global:endpoints.Count-1))]
             $global:Finish=@($endpoint[0],$endpoint[1])
         }
         'Endpoint Far' {
             $maxdistance=0
-            ForEach($endpoint in $endpoints){
+            ForEach($endpoint in $global:endpoints){
                 $distance = [math]::abs(($endpoint[0]+$endpoint[1])-($global:start[0]+$global:start[1]))
                 If($distance -gt $maxdistance) {
                     $maxdistance = $distance 
@@ -547,10 +548,10 @@ Function CreateLabyrinth () {
             }
         }
         'Endpoint Last' {
-            $global:Finish=$endpoints[($endpoints.Count-1)]
+            $global:Finish=$global:endpoints[($global:endpoints.Count-1)]
         }
         'Endpoint First' {
-            $global:Finish=$endpoints[0]
+            $global:Finish=$global:endpoints[0]
         }
         'Center' {
             $global:Finish=@([math]::Round(($global:SizeX-1)/2),[math]::Round(($global:SizeY-1)/2))
@@ -581,6 +582,32 @@ Function SolveLabyrinth {
     If ($global:ClearLabBeforeSolving -and -not $Global:FirstSolve) {DrawLabyrinth}
     $Global:FirstSolve = $false
     #Write-host "$global:start $global:finish"
+    If ($global:DeadEndFilling) {
+        ForEach($endpoint in $global:endpoints){
+            $x = $endpoint[0]
+            $y = $endpoint[1]
+#            $global:labyrinth[$x][$y] += 240
+            [System.Collections.ArrayList]$posDir = @()
+            $posdir.add(@($x,$y))
+            Do {
+                #Fill with bread crumb
+                $movechoice = $posDir[0]
+                $x=$movechoice[0]
+                $y=$movechoice[1]
+                [System.Collections.ArrayList]$posDir = @()
+                If (($global:labyrinth[$x][$y] -band 1) -eq 1 -and (($global:labyrinth[$x][($y-1)] -band 240) -eq 0)) {$posdir.add(@($x,($y-1),32))}
+                If (($global:labyrinth[$x][$y] -band 2) -eq 2 -and (($global:labyrinth[$x][($y+1)] -band 240) -eq 0)) {$posdir.add(@($x,($y+1),16))}
+                If (($global:labyrinth[$x][$y] -band 4) -eq 4 -and (($global:labyrinth[($x-1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x-1),$y,128))}
+                If (($global:labyrinth[$x][$y] -band 8) -eq 8 -and (($global:labyrinth[($x+1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x+1),$y,64))}
+                $numofposdir = $posdir.Count
+                If ($numofposdir -eq 1){
+                    $global:labyrinth[$x][$y] += 240
+                }
+            } While ($numofposdir -eq 1)
+        }
+        DrawLabyrinth
+    }
+    #start solving
     $x =$global:start[0]
     $y =$global:start[1]
     $Progress=1
@@ -588,7 +615,7 @@ Function SolveLabyrinth {
     $global:moves=0
     $maxmoves=($global:SizeX*$global:SizeY)
     $prgCalc.Value =$global:moves
-    $prgCalc.Maximum =$maxmoves
+    $prgCalc.Maximum = $maxmoves
     [System.Collections.ArrayList]$moved=@()
     While (($global:labyrinth[$x][$y] -band 512) -ne 512) {
         [System.Collections.ArrayList]$posDir = @()
