@@ -7,8 +7,8 @@ Clear-Host
 $Global:FrmSizeX = 640
 $Global:FrmSizeY = 480
 #Initial labyrint width & Height
-$global:SizeX = 10
-$global:SizeY= 10
+$global:SizeX = 40
+$global:SizeY= 30
 #Global brushes
 $global:brushw = New-Object Drawing.SolidBrush White
 $global:brushbl = New-Object Drawing.SolidBrush Black
@@ -25,12 +25,12 @@ $global:Stopwatch = New-Object -TypeName System.Diagnostics.Stopwatch
 #Global settings Create
 $Global:DrawWhileBuilding = $true
 $global:DrawWhileSolving = $true
-$global:BuildPause= 20
+$global:BuildPause= 3
 $global:Randomness = 3
-$global:CreateAlgoritms =@('Depth-First','Prim','Wilson','Aldous-Broder')
+$global:CreateAlgoritms =@('Depth-First','Prim','Wilson','Aldous-Broder','Eller')
 $global:CreateAlgoritm = 'Prim'
 $global:Startpoints = @('Random','Center','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
-$global:Startpoint = 'Top-Left'
+$global:Startpoint = 'Random'
 $Global:Finishpoints = @('Endpoint Random','Endpoint Far','Endpoint Last','Endpoint First','Center','Random','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
 $global:Finishpoint = 'Endpoint Far'
 $global:Gaps = $false
@@ -494,6 +494,7 @@ Function InitLabyrinth(){
 #>
 Function CreateLabyrinth () {
     $global:isCreating = $true
+    #determine startingpoint in the maze
     Switch ($global:Startpoint) {
         'Random'{
             $x = Get-Random -Minimum 1 -Maximum ($global:SizeX-1)
@@ -687,6 +688,70 @@ Function CreateLabyrinth () {
                 }
             }
         }
+        'Wilson-ip' {
+            [System.Collections.ArrayList]$Searchpath = @()
+            $moved.add(@(Get-Random -Minimum 0 -Maximum $global:SizeX),(Get-Random -Minimum 0 -Maximum $global:SizeY))
+            While($pointer -ge 0) {
+                [System.Collections.ArrayList]$posDir = @()
+                If ($y -gt 0) {
+                    If (($global:labyrinth[$x][$y-1] -bor 15) -eq 15){
+                        $posDir.Add(@($global:labyrinth[$x][$y-1],$x,($y-1),1)) #Up
+                    }
+                } #up
+                If ($y -lt ( $global:SizeY-1)) {
+                    If (($global:labyrinth[$x][$y+1] -bor 15) -eq 15 ) {
+                        $posDir.Add(@(($global:labyrinth[$x][$y+1]),$x,($y+1),2)) #Down
+                    }
+                } #down
+                If ($x -gt 0) {
+                    If (($global:labyrinth[$x-1][$y] -bor 15) -eq 15) {
+                        $posDir.Add(@(($global:labyrinth[$x-1][$y]),($x-1),$y,4)) #left
+                    }
+                }  #left
+                If ($x -lt ( $global:SizeX-1)) {
+                    If(($global:labyrinth[$x+1][$y] -bor 15) -eq 15) {
+                        $posDir.Add(@(($global:labyrinth[$x+1][$y]),($x+1),$y,8))#right
+                    }
+                } #right
+                #Random direction
+                $numofposdir = $posdir.Count
+                If ($numofposdir -ne 0) {
+                    $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
+                    $global:labyrinth[$x][$y] += $movedetection[3]
+                    If($Global:DrawWhileBuilding){
+                        DrawExplorer -x $x -y $y
+                    }
+                    $x=$movedetection[1]
+                    $y=$movedetection[2]
+                    #Deur naar de andere kant!
+                    Switch($movedetection[3]){
+                        1 {$value=2}
+                        2 {$value=1}
+                        4 {$value=8}
+                        8 {$value=4}
+                    }
+                    $global:labyrinth[$x][$y] += $value
+                    $nextpoint = $Searchpath | Where-object {$_[0] -eq $x -and $_[1] -eq $y}
+                    If ($null -eq $nextpoint) {
+                        $nextpoint = $moved | Where-object {$_[0] -eq $x -and $_[1] -eq $y}
+                        If ($null -eq $nextpoint){
+                            $Searchpath.add(@($x,$y))
+                        } Else {
+
+                        }
+                    } Else {
+
+                    }
+                }
+            }
+        }
+        'Eller-ip' {
+            While($Workingrow -le $global:SizeY) {
+
+
+                $WorkingRow++
+            }
+        }
         default {Write-Host "$global:CreateAlgoritm not yet implemented"}
     }
     #End point placing
@@ -799,6 +864,7 @@ Function SolveLabyrinth {
     $prgCalc.Maximum = $global:maxmoves
     [System.Collections.ArrayList]$moved=@()
     $moved.Add(@($x,$y))
+    $previousDirection = 0 
     While (($global:labyrinth[$x][$y] -band 512) -ne 512) {
         [System.Collections.ArrayList]$posDir = @()
         If (($global:labyrinth[$x][$y] -band 1) -eq 1 -and (($global:labyrinth[$x][($y-1)] -band 240) -eq 0)) {$posdir.add(@($x,($y-1),16))}
@@ -813,7 +879,36 @@ Function SolveLabyrinth {
         If ($numofposdir -ne 0) {
             #Search Algoritms
             Switch ($global:SolveAlgoritm) {
-                'Straight' {<#Picked up in if Statement#>}
+                'Follow-Wall' {
+                    Switch($previousDirection) {
+                        16 {
+                            $movechoice = $posDir | where-Object {$_[2] -eq 64}
+                            If ($null -eq $movechoice) {$movechoice = $posDir | where-Object {$_[2] -eq 16}}
+                            If ($null -eq $movechoice) {$movechoice = $posDir | where-Object {$_[2] -eq 128}}
+                            If ($null -eq $movechoice) {$movechoice = $posDir | where-Object {$_[2] -eq 32}}
+                        }
+                        32 {
+                            $movechoice = $posDir | where-Object {$_[2] -eq 128}
+                            If ($null -eq $movechoice) {$movechoice = $posDir | where-Object {$_[2] -eq 32}}
+                            If ($null -eq $movechoice) {$movechoice = $posDir | where-Object {$_[2] -eq 64}}
+                            If ($null -eq $movechoice) {$movechoice = $posDir | where-Object {$_[2] -eq 16}}
+                        }
+                        64 {
+                            $movechoice = $posDir | where-Object {$_[2] -eq 32}
+                            If ($null -eq $movechoice) {$movechoice = $posDir | where-Object {$_[2] -eq 64}}
+                            If ($null -eq $movechoice) {$movechoice = $posDir | where-Object {$_[2] -eq 16}}
+                            If ($null -eq $movechoice) {$movechoice = $posDir | where-Object {$_[2] -eq 128}}
+                        }
+                        128 {
+                            $movechoice = $posDir | where-Object {$_[2] -eq 16}
+                            If ($null -eq $movechoice) {$movechoice = $posDir | where-Object {$_[2] -eq 128}}
+                            If ($null -eq $movechoice) {$movechoice = $posDir | where-Object {$_[2] -eq 32}}
+                            If ($null -eq $movechoice) {$movechoice = $posDir | where-Object {$_[2] -eq 64}}
+                        }
+                        default {$movechoice = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]}
+                    }
+                    $direction = $movechoice[2]
+                }
                 'Random' {
                     $movechoice = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
                     $direction = $movechoice[2]
