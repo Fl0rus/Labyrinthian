@@ -7,8 +7,8 @@ Clear-Host
 $Global:FrmSizeX = 640
 $Global:FrmSizeY = 480
 #Initial labyrint width & Height
-$global:SizeX = 50
-$global:SizeY= 40
+$global:SizeX = 10
+$global:SizeY= 10
 #Global brushes
 $global:brushw = New-Object Drawing.SolidBrush White
 $global:brushbl = New-Object Drawing.SolidBrush Black
@@ -23,12 +23,12 @@ $global:brushPlayer = New-Object Drawing.SolidBrush Fuchsia
 #Global timer
 $global:Stopwatch = New-Object -TypeName System.Diagnostics.Stopwatch
 #Global settings Create
-$Global:DrawWhileBuilding = $false
+$Global:DrawWhileBuilding = $true
 $global:DrawWhileSolving = $true
 $global:BuildPause= 20
 $global:Randomness = 3
-$global:CreateAlgoritms =@('Depth-First','Kruskai','Prim','Wilson','Aldous-Broder')
-$global:CreateAlgoritm = 'Depth-First'
+$global:CreateAlgoritms =@('Depth-First','Prim','Wilson','Aldous-Broder')
+$global:CreateAlgoritm = 'Prim'
 $global:Startpoints = @('Random','Center','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
 $global:Startpoint = 'Top-Left'
 $Global:Finishpoints = @('Endpoint Random','Endpoint Far','Endpoint Last','Endpoint First','Center','Random','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
@@ -38,9 +38,10 @@ $global:Gaps = $false
 #Global settings Solve
 $global:PlayerPause = 2
 $global:DeadEndFilling = $true
-$global:SolveAlgoritms =@('Radar','Follow-Wall','Straight Random','Straight Fixed','Random','Fixed')
+$global:SolveAlgoritms =@('Radar','Follow-Wall','Random','Fixed')
 $global:SolveAlgoritm = 'Radar'
 $global:ClearLabBeforeSolving = $true
+$global:maxmoves=($global:SizeX*$global:SizeY)
 $global:moves = 0
 
 $FrmLabyrinthian                            = New-Object system.Windows.Forms.Form
@@ -245,6 +246,31 @@ $sldRandomNum.Location = New-Object System.Drawing.Point(300,245)
 $sldRandomNum.Maximum = 100
 $sldRandomNum.Minimum = 1
 
+$lblBuildSpeed = New-Object System.Windows.Forms.Label
+$lblBuildSpeed.width = 50
+$lblBuildSpeed.height = 30
+$lblBuildSpeed.location = New-object System.Drawing.Point(10,290)
+$lblBuildSpeed.Text = "Build Speed"
+
+$sldBuildSpeed = New-Object System.Windows.Forms.Trackbar
+$sldBuildSpeed.AutoSize = $true
+$sldBuildSpeed.Text = "Build Speed"
+$sldBuildSpeed.width = 200
+$sldBuildSpeed.Height = 30
+$sldBuildSpeed.location = New-Object System.Drawing.Point(60,290)
+$sldBuildSpeed.Maximum = 250
+$sldBuildSpeed.Minimum = 0
+$sldBuildSpeed.TickFrequency = 10
+$sldBuildSpeed.TickStyle = 2
+$sldBuildSpeed.Orientation = 0
+
+$sldBuildSpeedNum = New-Object System.Windows.Forms.NumericUpDown
+$sldBuildSpeedNum.width = 45
+$sldBuildSpeedNum.Height = 25
+$sldBuildSpeedNum.Location = New-Object System.Drawing.Point(270,290)
+$sldBuildSpeedNum.Maximum = 250
+$sldBuildSpeedNum.Minimum =0
+
 ##########################
 #Solve Settings controls #
 ##########################
@@ -255,30 +281,30 @@ $chkDrawSol.Height = 25
 $chkDrawSol.Text = "Draw while solving"
 $chkDrawSol.Location = New-Object System.Drawing.Point(10,10)
 
-$lblSpeed = New-Object System.Windows.Forms.Label
-$lblSpeed.width = 50
-$lblSpeed.height =30
-$lblSpeed.location = New-object System.Drawing.Point(10,40)
-$lblSpeed.Text = "Speed"
+$lblSolveSpeed = New-Object System.Windows.Forms.Label
+$lblSolveSpeed.width = 50
+$lblSolveSpeed.height =30
+$lblSolveSpeed.location = New-object System.Drawing.Point(10,40)
+$lblSolveSpeed.Text = "Speed"
 
-$sldSpeed = New-Object System.Windows.Forms.Trackbar
-$sldSpeed.AutoSize = $true
-$sldSpeed.Text = "Speed"
-$sldSpeed.width = 200
-$sldSpeed.Height = 30
-$sldSpeed.location = New-Object System.Drawing.Point(60,40)
-$sldSpeed.Maximum = 250
-$sldSpeed.Minimum = 0
-$sldSpeed.TickFrequency = 10
-$sldSpeed.TickStyle = 2
-$sldSpeed.Orientation = 0
+$sldSolveSpeed = New-Object System.Windows.Forms.Trackbar
+$sldSolveSpeed.AutoSize = $true
+$sldSolveSpeed.Text = "Speed"
+$sldSolveSpeed.width = 200
+$sldSolveSpeed.Height = 30
+$sldSolveSpeed.location = New-Object System.Drawing.Point(60,40)
+$sldSolveSpeed.Maximum = 250
+$sldSolveSpeed.Minimum = 0
+$sldSolveSpeed.TickFrequency = 10
+$sldSolveSpeed.TickStyle = 2
+$sldSolveSpeed.Orientation = 0
 
-$sldSpeedNum = New-Object System.Windows.Forms.NumericUpDown
-$sldSpeedNum.width = 45
-$sldSpeedNum.Height = 25
-$sldSpeedNum.Location = New-Object System.Drawing.Point(270,40)
-$sldSpeedNum.Maximum = 250
-$sldSpeedNum.Minimum =0
+$sldSolveSpeedNum = New-Object System.Windows.Forms.NumericUpDown
+$sldSolveSpeedNum.width = 45
+$sldSolveSpeedNum.Height = 25
+$sldSolveSpeedNum.Location = New-Object System.Drawing.Point(270,40)
+$sldSolveSpeedNum.Maximum = 250
+$sldSolveSpeedNum.Minimum =0
 
 $lblSolveAlgoritm = New-Object System.Windows.Forms.Label
 $lblSolveAlgoritm.AutoSize = $true
@@ -349,11 +375,12 @@ $tabCreatecontrols = @(
     $lblFinishpoint,$cmbFinishpoint,
     $sldWidth,$sldwidthNum,$lblWidth,
     $sldHeight,$sldHeightNum,$lblHeight
-    $sldRandom,$sldRandomNum,$lblRandom
+    $sldRandom,$sldRandomNum,$lblRandom,
+    $lblBuildSpeed,$sldBuildSpeed,$sldBuildSpeedNum
 )
 $tabSolvecontrols = @(
     $chkDrawSol,
-    $sldSpeed,$sldSpeedNum,$lblSpeed,
+    $sldSolveSpeed,$sldSolveSpeedNum,$lblSolveSpeed,
     $lblSolveAlgoritm,$cmbSolveAlgoritm,
     $chkDeadEndFill
 )
@@ -399,8 +426,8 @@ Function ShowSettings(){
         $sldHeight.Enabled = $true
         $sldHeightNum.Enabled = $true
     }
-    $sldSpeed.Value = $global:PlayerPause
-    $sldSpeedNum.value = $global:PlayerPause
+    $sldSolveSpeed.Value = $global:PlayerPause
+    $sldSolveSpeedNum.value = $global:PlayerPause
     $sldRandom.Value = $global:Randomness
     $sldRandomNum.Value = $global:Randomness
     $cmbSolveAlgoritm.SelectedItem = $global:SolveAlgoritmIndex
@@ -417,12 +444,12 @@ Function SaveSettings {
     $Global:DrawWhileBuilding = $chkDrawLab.Checked
     $global:DrawWhileSolving = $chkDrawSol.Checked
     $global:DeadEndFilling = $chkDeadEndFill.Checked
-    $global:PlayerPause = $sldSpeed.Value
+    $global:PlayerPause = $sldSolveSpeed.Value
     If ($global:SizeX -ne $sldWidth.Value -or $global:SizeY -ne $sldHeight.Value) {
         $global:SizeX = $sldWidth.Value
         $global:SizeY = $sldHeight.Value
         $global:maxmoves=($global:SizeX*$global:SizeY)
-        If(-not $Apply) {InitLabyrinth} Else {$BtnSolveLabyrinth.Enabled=$false}
+        $BtnSolveLabyrinth.Enabled=$false
     }
     $global:Randomness = $sldRandom.Value
     If ($global:SolveAlgoritm -ne $cmbSolveAlgoritm.SelectedItem) {
@@ -459,6 +486,9 @@ Function InitLabyrinth(){
     $BtnCreateLabyrinth.Enabled = $true
     $BtnSolveLabyrinth.Enabled = $true
 }
+<#
+# Create the Labyrinth
+#>
 Function CreateLabyrinth () {
     $global:isCreating = $true
     Switch ($global:Startpoint) {
@@ -499,6 +529,7 @@ Function CreateLabyrinth () {
     $prgCalc.Maximum=$global:SizeX*$global:SizeY
     [System.Collections.ArrayList]$moved = @()
     [System.Collections.ArrayList]$global:endpoints = @()
+    $moved.add(@($x,$y))
     If($Global:DrawWhileBuilding){DrawExplorer -x $x -y $y}
     $previousmove = 0
     Switch($global:CreateAlgoritm){
@@ -574,8 +605,87 @@ Function CreateLabyrinth () {
                 }
             }
         }
-        'Kruskai' {}
-        default {Write-Host "$global:CreateAlgoritm not yet implemeted"}
+        'Prim' {
+            While($pointer -ge 0) {
+                [System.Collections.ArrayList]$posDir = @()
+                If ($y -gt 0) {
+                    If ($global:labyrinth[$x][$y-1] -eq 0){
+                        $posDir.Add(@($global:labyrinth[$x][$y-1],$x,($y-1),1)) #Up
+                    }
+                } #up
+                If ($y -lt ( $global:SizeY-1)) {
+                    If ($global:labyrinth[$x][$y+1] -eq 0 ) {
+                        $posDir.Add(@(($global:labyrinth[$x][$y+1]),$x,($y+1),2)) #Down
+                    }
+                } #down
+                If ($x -gt 0) {
+                    If ($global:labyrinth[$x-1][$y] -eq 0) {
+                        $posDir.Add(@(($global:labyrinth[$x-1][$y]),($x-1),$y,4)) #left
+                    }
+                }  #left
+                If ($x -lt ( $global:SizeX-1)) {
+                    If($global:labyrinth[$x+1][$y] -eq 0) {
+                        $posDir.Add(@(($global:labyrinth[$x+1][$y]),($x+1),$y,8))#right
+                    }
+                } #right
+                #Random direction
+                $numofposdir = $posdir.Count
+                If ($numofposdir -ne 0) {
+                    $movedetection = $posdir | Where-Object {$_[3] -eq $previousmove}
+                    If ($null -eq $movedetection) {
+                        $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
+                    } Elseif ((Get-Random -Minimum 0 -Maximum $global:Randomness) -eq 0) {
+                        $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
+                    }
+                    $previousmove = $movedetection[3]
+                    #deur gemaakt
+                    $global:labyrinth[$x][$y] += $movedetection[3]
+                    If($Global:DrawWhileBuilding){
+                        DrawExplorer -x $x -y $y
+                    }
+                    $x=$movedetection[1]
+                    $y=$movedetection[2]
+                    #Deur naar de andere kant!
+                    Switch($movedetection[3]){
+                        1 {$value=2}
+                        2 {$value=1}
+                        4 {$value=8}
+                        8 {$value=4}
+                    }
+                    $global:labyrinth[$x][$y] += $value
+                    $moved.add(@($x,$y))
+                    If($Global:DrawWhileBuilding){
+                        DrawExplorer -x $x -y $y
+                        Start-Sleep -Milliseconds $global:BuildPause
+                    }
+                    $pointer++
+                    #Write-host "Step $pointer = Moved to $x $y"
+                    $prgCalc.Value = $progress
+                    $nextspot = $moved[(Get-Random -Minimum 0 -Maximum $moved.count)] 
+                    $x = $nextspot[0]
+                    $y = $nextspot[1]
+                    $progress++
+                } Elseif ($pointer -eq 0) {
+                    $global:endpoints.Add(@($x,$y))
+                    $pointer--
+                } Else {
+                    $compare = $global:labyrinth[$x][$y] -band 15
+                    If($compare -eq 1 -or $compare -eq 2 -or $compare -eq 4 -or $compare -eq 8) {
+                        $global:endpoints.Add(@($x,$y))
+                    }
+                    $removespot = $moved | Where-object {$_[0] -eq $x -and $_[1] -eq $y}
+                    $pointer--
+                    If ($pointer -gt 0) {
+                        $moved.Remove($removespot)
+                        $nextspot = $moved[(Get-Random -Minimum 0 -Maximum $moved.count)] 
+                        $x = $nextspot[0]
+                        $y = $nextspot[1]
+                    }
+                    #Write-host "Step $pointer = Niewe scan op punt $x $y"
+                }
+            }
+        }
+        default {Write-Host "$global:CreateAlgoritm not yet implemented"}
     }
     #End point placing
     If ($pointer -ne 0) {
@@ -618,6 +728,9 @@ Function CreateLabyrinth () {
     $Global:FirstSolve = $true
     $global:isCreating = $false
 }
+<#
+# Solve the Labyrinth
+#>
 Function SolveLabyrinth {
     Param ()
     $global:isSolving = $true
@@ -637,6 +750,8 @@ Function SolveLabyrinth {
     $Global:FirstSolve = $false
     #Write-host "$global:start $global:finish"
     If ($global:DeadEndFilling) {
+        $previouslocationX = $global:Finish[0]
+        $previouslocationY = $global:Finish[0]
         ForEach($endpoint in $global:endpoints){
             [System.Collections.ArrayList]$posDir = @()
             $posdir.add($endpoint)
@@ -646,13 +761,22 @@ Function SolveLabyrinth {
                 $x=$movechoice[0]
                 $y=$movechoice[1]
                 [System.Collections.ArrayList]$posDir = @()
-                If (($global:labyrinth[$x][$y] -band 1) -eq 1 -and (($global:labyrinth[$x][($y-1)] -band 240) -eq 0)) {$posdir.add(@($x,($y-1),32))}
-                If (($global:labyrinth[$x][$y] -band 2) -eq 2 -and (($global:labyrinth[$x][($y+1)] -band 240) -eq 0)) {$posdir.add(@($x,($y+1),16))}
-                If (($global:labyrinth[$x][$y] -band 4) -eq 4 -and (($global:labyrinth[($x-1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x-1),$y,128))}
-                If (($global:labyrinth[$x][$y] -band 8) -eq 8 -and (($global:labyrinth[($x+1)][$y] -band 240) -eq 0)) {$posdir.add(@(($x+1),$y,64))}
+                If (($global:labyrinth[$x][$y] -band 1) -eq 1 -and -not (($x -eq $previouslocationX) -and (($y-1) -eq $previouslocationY))) {$posdir.add(@($x,($y-1),32))}
+                If (($global:labyrinth[$x][$y] -band 2) -eq 2 -and -not (($x -eq $previouslocationX) -and (($y+1) -eq $previouslocationY))) {$posdir.add(@($x,($y+1),16))}
+                If (($global:labyrinth[$x][$y] -band 4) -eq 4 -and -not ((($x-1) -eq $previouslocationX) -and ($y -eq $previouslocationY))) {$posdir.add(@(($x-1),$y,128))}
+                If (($global:labyrinth[$x][$y] -band 8) -eq 8 -and -not ((($x+1) -eq $previouslocationX) -and ($y -eq $previouslocationY))) {$posdir.add(@(($x+1),$y,64))}
                 $numofposdir = $posdir.Count
                 If ($numofposdir -eq 1){
                     $global:labyrinth[$x][$y] += 240
+                    $previouslocationX =$x
+                    $previouslocationY= $y
+                    If($global:DrawWhileSolving){
+                        DrawExplorer -x $x -y $y
+                        Start-Sleep -Milliseconds $global:PlayerPause
+                    }
+                } Else {
+                    $previouslocationX = $global:Start[0]
+                    $previouslocationY = $global:Start[0]
                 }
             } While ($numofposdir -eq 1)
         }
@@ -666,6 +790,7 @@ Function SolveLabyrinth {
     $prgCalc.Value =$global:moves
     $prgCalc.Maximum = $global:maxmoves
     [System.Collections.ArrayList]$moved=@()
+    $moved.Add(@($x,$y))
     While (($global:labyrinth[$x][$y] -band 512) -ne 512) {
         [System.Collections.ArrayList]$posDir = @()
         If (($global:labyrinth[$x][$y] -band 1) -eq 1 -and (($global:labyrinth[$x][($y-1)] -band 240) -eq 0)) {$posdir.add(@($x,($y-1),16))}
@@ -679,17 +804,7 @@ Function SolveLabyrinth {
         }
         If ($numofposdir -ne 0) {
             #Search Algoritms
-            $Algoritm = ($global:SolveAlgoritm -split ' ')[0]
-            If ($Algoritm -eq 'Straight') {
-                $checkdir = $posdir | Where-Object {$_[2] -eq $Previousdirection}
-                If ($null -ne $checkdir) {
-                    $movechoice = $checkdir
-                    $direction = $Previousdirection
-                } Else {
-                    $Algoritm = ($global:SolveAlgoritm -split ' ')[1]
-                }
-            }
-            Switch ($Algoritm) {
+            Switch ($global:SolveAlgoritm) {
                 'Straight' {<#Picked up in if Statement#>}
                 'Random' {
                     $movechoice = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
@@ -877,10 +992,10 @@ function ChangeSizeYNum () {
     $sldHeight.Value = $sldHeightNum.Value 
 }
 function ChangeSpeed () {
-    $sldSpeedNum.Value = $sldSpeed.Value
+    $sldSolveSpeedNum.Value = $sldSolveSpeed.Value
 }
 function ChangeSpeedNum () {
-    $sldSpeed.Value = $sldSpeedNum.Value 
+    $sldSolveSpeed.Value = $sldSolveSpeedNum.Value 
 }
 function ChangeRandom () {
     $sldRandomNum.Value = $sldRandom.Value
@@ -903,8 +1018,8 @@ $sldWidth.Add_Scroll({ ChangeSizeX })
 $sldwidthNum.Add_ValueChanged({ChangeSizeXNum})
 $sldHeight.Add_Scroll({ ChangeSizeY })
 $sldHeightNum.Add_ValueChanged({ChangeSizeYNum})
-$sldSpeed.Add_Scroll({ ChangeSpeed })
-$sldSpeedNum.Add_ValueChanged({ChangeSpeedNum})
+$sldSolveSpeed.Add_Scroll({ ChangeSpeed })
+$sldSolveSpeedNum.Add_ValueChanged({ChangeSpeedNum})
 $sldRandom.Add_Scroll({ ChangeRandom })
 $sldRandomNum.Add_ValueChanged({ChangeRandomNum})
 
@@ -918,7 +1033,7 @@ $FrmLabyrinthian.Add_SizeChanged({
 $btnOk.Add_Click({
     $FrmLabyrinthianSettings.Hide()
     $FrmLabyrinthianSettings.Close()
-    SaveSettings -Close
+    SaveSettings
 })
 $btnApply.Add_Click({
     SaveSettings -Apply
@@ -943,7 +1058,6 @@ $timTimer.Add_Tick({
     If ($global:isSolving){
         $lblCalc.ForeColor ='Red'
         $lblCalc.Text = $global:moves
-        $global:labyrinth[$global:PlayerX][$global:PlayerY]+=1024
     } Else {
         Switch ($global:timerticks){
             0 {$lblCalc.ForeColor ='Black';$lblCalc.Text = $global:CreateAlgoritm}
