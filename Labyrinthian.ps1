@@ -428,6 +428,8 @@ Function ShowSettings(){
     }
     $sldSolveSpeed.Value = $global:PlayerPause
     $sldSolveSpeedNum.value = $global:PlayerPause
+    $sldBuildSpeed.Value = $global:BuildPause
+    $sldBuildSpeedNum.value = $global:BuildPause
     $sldRandom.Value = $global:Randomness
     $sldRandomNum.Value = $global:Randomness
     $cmbSolveAlgoritm.SelectedItem = $global:SolveAlgoritmIndex
@@ -445,6 +447,7 @@ Function SaveSettings {
     $global:DrawWhileSolving = $chkDrawSol.Checked
     $global:DeadEndFilling = $chkDeadEndFill.Checked
     $global:PlayerPause = $sldSolveSpeed.Value
+    $global:BuildPause = $sldBuildSpeed.Value
     If ($global:SizeX -ne $sldWidth.Value -or $global:SizeY -ne $sldHeight.Value) {
         $global:SizeX = $sldWidth.Value
         $global:SizeY = $sldHeight.Value
@@ -666,7 +669,6 @@ Function CreateLabyrinth () {
                     $y = $nextspot[1]
                     $progress++
                 } Elseif ($pointer -eq 0) {
-                    $global:endpoints.Add(@($x,$y))
                     $pointer--
                 } Else {
                     $compare = $global:labyrinth[$x][$y] -band 15
@@ -721,8 +723,10 @@ Function CreateLabyrinth () {
             'Bottom-Left'{$global:Finish=@(0,($global:SizeY-1))}
         }
     } Else {
-        $global:Finish=$Global:Start #Create 12 pixel labyrinth
+        $global:Finish=$Global:Start #Create 1 pixel labyrinth
     }
+    $removespot = $global:endpoints | Where-object {$_[0] -eq $global:Finish[0] -and $_[1] -eq $global:Finish[1]}
+    $global:endpoints.Remove($removespot)
     $global:labyrinth[$global:Finish[0]][$global:Finish[1]] = 512 #finish
     If($Global:DrawWhileBuilding){DrawExplorer -x $global:Finish[0] -y $global:Finish[1]}
     $Global:FirstSolve = $true
@@ -749,9 +753,11 @@ Function SolveLabyrinth {
     If ($global:ClearLabBeforeSolving -and -not $Global:FirstSolve) {DrawLabyrinth}
     $Global:FirstSolve = $false
     #Write-host "$global:start $global:finish"
-    If ($global:DeadEndFilling) {
-        $previouslocationX = $global:Finish[0]
-        $previouslocationY = $global:Finish[0]
+    If (($global:DeadEndFilling) -and ($global:endpoints.count -gt 0)) {
+        $prgCalc.Maximum = $global:endpoints.count
+        $i=0
+        $previouslocationX = -1
+        $previouslocationY = -1
         ForEach($endpoint in $global:endpoints){
             [System.Collections.ArrayList]$posDir = @()
             $posdir.add($endpoint)
@@ -768,19 +774,21 @@ Function SolveLabyrinth {
                 $numofposdir = $posdir.Count
                 If ($numofposdir -eq 1){
                     $global:labyrinth[$x][$y] += 240
-                    $previouslocationX =$x
-                    $previouslocationY= $y
+                    $previouslocationX = $x
+                    $previouslocationY = $y
                     If($global:DrawWhileSolving){
                         DrawExplorer -x $x -y $y
                         Start-Sleep -Milliseconds $global:PlayerPause
                     }
                 } Else {
-                    $previouslocationX = $global:Start[0]
-                    $previouslocationY = $global:Start[0]
+                    $previouslocationX = -1
+                    $previouslocationY = -1
                 }
             } While ($numofposdir -eq 1)
+            $i++
+            $prgCalc.Value = $i
         }
-        DrawLabyrinth
+        #DrawLabyrinth
     }
     #start solving
     $x =$global:start[0]
@@ -991,11 +999,17 @@ function ChangeSizeXNum () {
 function ChangeSizeYNum () {
     $sldHeight.Value = $sldHeightNum.Value 
 }
-function ChangeSpeed () {
+function ChangeSolveSpeed () {
     $sldSolveSpeedNum.Value = $sldSolveSpeed.Value
 }
-function ChangeSpeedNum () {
+function ChangeSolveSpeedNum () {
     $sldSolveSpeed.Value = $sldSolveSpeedNum.Value 
+}
+function ChangeBuildSpeed () {
+    $sldBuildSpeedNum.Value = $sldBuildSpeed.Value
+}
+function ChangeBuildSpeedNum () {
+    $sldBuildSpeed.Value = $sldBuildSpeedNum.Value 
 }
 function ChangeRandom () {
     $sldRandomNum.Value = $sldRandom.Value
@@ -1018,8 +1032,10 @@ $sldWidth.Add_Scroll({ ChangeSizeX })
 $sldwidthNum.Add_ValueChanged({ChangeSizeXNum})
 $sldHeight.Add_Scroll({ ChangeSizeY })
 $sldHeightNum.Add_ValueChanged({ChangeSizeYNum})
-$sldSolveSpeed.Add_Scroll({ ChangeSpeed })
-$sldSolveSpeedNum.Add_ValueChanged({ChangeSpeedNum})
+$sldSolveSpeed.Add_Scroll({ ChangeSolveSpeed })
+$sldSolveSpeedNum.Add_ValueChanged({ChangeSolveSpeedNum})
+$sldBuildSpeed.Add_Scroll({ ChangeBuildSpeed })
+$sldBuildSpeedNum.Add_ValueChanged({ChangeBuildSpeedNum})
 $sldRandom.Add_Scroll({ ChangeRandom })
 $sldRandomNum.Add_ValueChanged({ChangeRandomNum})
 
