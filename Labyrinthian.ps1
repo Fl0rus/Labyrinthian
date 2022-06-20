@@ -6,9 +6,7 @@ Clear-Host
 
 $Global:FrmSizeX = 640
 $Global:FrmSizeY = 480
-#Initial labyrint width & Height
-$global:SizeX = 30
-$global:SizeY= 15
+
 #Global brushes
 $global:brushw = New-Object Drawing.SolidBrush White
 $global:brushbl = New-Object Drawing.SolidBrush Black
@@ -21,6 +19,9 @@ $global:brushBC = New-Object Drawing.SolidBrush GreenYellow
 $global:brushPlayer = New-Object Drawing.SolidBrush Fuchsia
 
 #Global settings Create
+#Initial labyrint width & Height
+$global:SizeX = 30
+$global:SizeY= 15
 $Global:DrawWhileBuilding = $true
 $global:DrawWhileSolving = $true
 $global:BuildPause= 1
@@ -48,7 +49,6 @@ $FrmLabyrinthian.TopMost                    = $true
 $FrmLabyrinthian.BackColor                  = '#808080'
 $FrmLabyrinthian.StartPosition = 'Manual'
 $FrmLabyrinthian.Location                    = New-Object System.Drawing.Point(0,0)
-#$FrmLabyrinthian.TransparencyKey = "#808080"
 
 $BtnCreateLabyrinth                         = New-Object system.Windows.Forms.Button
 $BtnCreateLabyrinth.text                    = "Create"
@@ -749,10 +749,31 @@ Function CreateLabyrinth () {
                 $WorkingRow++
             }
         }
-        default {Write-Host "$global:CreateAlgoritm not yet implemented"}
+        default {
+            #Default empty labyrinth
+            For ($x=0;$x -lt $global:SizeX;$x++) {
+                For ($y=0;$y -lt $global:SizeY;$y++) {
+                    If ($x -eq 0) {$global:labyrinth[$x][$y]+=8}
+                    If ($x -eq ($global:SizeX-1)) {$global:labyrinth[$x][$y]+=4}
+                    If ($y -eq 0) {$global:labyrinth[$x][$y]+=2}
+                    If ($y -eq ($global:SizeY-1)) {$global:labyrinth[$x][$y]+=1}
+                    $compare = $global:labyrinth[$x][$y] -band 15
+                    Switch ($compare) {
+                        0 {$global:labyrinth[$x][$y]+=15}
+                        1 {$global:labyrinth[$x][$y]+=12}
+                        2 {$global:labyrinth[$x][$y]+=12}
+                        4 {$global:labyrinth[$x][$y]+=3}
+                        8 {$global:labyrinth[$x][$y]+=3}
+                        default {$global:endpoints.Add(@($x,$y))}
+                    }
+                    If($Global:DrawWhileBuilding) {DrawExplorer -x $x -y $y}
+                }
+            }
+            Write-Host "$global:CreateAlgoritm not yet implemented"
+        }
     }
     #End point placing
-    If ($pointer -ne 0) {
+    If ($global:endpoints.count -gt 0) {
         Switch ($Global:Finishpoint){
             'Endpoint Far' {
                 $maxdistance=0
@@ -778,7 +799,7 @@ Function CreateLabyrinth () {
                 $global:Finish=@([math]::Round(($global:SizeX-1)/2),[math]::Round(($global:SizeY-1)/2))
             }
             'Random'{
-                $global:Finish=@(Get-Random -Minimum 1 -Maximum ($global:SizeX-1),Get-Random -Minimum 1 -Maximum ($global:SizeY-1))}
+                $global:Finish=@((Get-Random -Minimum 0 -Maximum ($global:SizeX-1)),(Get-Random -Minimum 0 -Maximum ($global:SizeY-1)))}
             'Top-Left' {$global:Finish=@(0,0)}
             'Top-Right'{$global:Finish=@(($global:SizeX-1),0)}
             'Bottom-Right'{$global:Finish=@(($global:SizeX-1),($global:SizeY-1))}
