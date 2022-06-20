@@ -7,8 +7,8 @@ Clear-Host
 $Global:FrmSizeX = 640
 $Global:FrmSizeY = 480
 #Initial labyrint width & Height
-$global:SizeX = 40
-$global:SizeY= 30
+$global:SizeX = 30
+$global:SizeY= 15
 #Global brushes
 $global:brushw = New-Object Drawing.SolidBrush White
 $global:brushbl = New-Object Drawing.SolidBrush Black
@@ -17,15 +17,13 @@ $global:brushdb = New-Object Drawing.SolidBrush DarkBlue
 $global:brushfin = New-Object Drawing.SolidBrush Purple
 $global:brushbc = New-Object Drawing.SolidBrush Lavender
 $global:brushr = New-Object Drawing.SolidBrush Tomato
-$global:brushlc = New-Object Drawing.SolidBrush WhiteSmoke
+$global:brushBC = New-Object Drawing.SolidBrush GreenYellow
 $global:brushPlayer = New-Object Drawing.SolidBrush Fuchsia
 
-#Global timer
-$global:Stopwatch = New-Object -TypeName System.Diagnostics.Stopwatch
 #Global settings Create
 $Global:DrawWhileBuilding = $true
 $global:DrawWhileSolving = $true
-$global:BuildPause= 3
+$global:BuildPause= 1
 $global:Randomness = 3
 $global:CreateAlgoritms =@('Depth-First','Prim','Wilson','Aldous-Broder','Eller')
 $global:CreateAlgoritm = 'Prim'
@@ -33,13 +31,12 @@ $global:Startpoints = @('Random','Center','Top-Left','Top-Right','Bottom-Right',
 $global:Startpoint = 'Random'
 $Global:Finishpoints = @('Endpoint Random','Endpoint Far','Endpoint Last','Endpoint First','Center','Random','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
 $global:Finishpoint = 'Endpoint Far'
-$global:Gaps = $false
 
 #Global settings Solve
 $global:PlayerPause = 2
 $global:DeadEndFilling = $true
 $global:SolveAlgoritms =@('Radar','Follow-Wall','Random','Fixed')
-$global:SolveAlgoritm = 'Radar'
+$global:SolveAlgoritm = 'Follow-Wall'
 $global:ClearLabBeforeSolving = $true
 $global:maxmoves=($global:SizeX*$global:SizeY)
 $global:moves = 0
@@ -757,10 +754,6 @@ Function CreateLabyrinth () {
     #End point placing
     If ($pointer -ne 0) {
         Switch ($Global:Finishpoint){
-            'Endpoint Random'{
-                $endpoint=$global:endpoints[(Get-Random -Minimum 0 -Maximum ($global:endpoints.Count-1))]
-                $global:Finish=@($endpoint[0],$endpoint[1])
-            }
             'Endpoint Far' {
                 $maxdistance=0
                 ForEach($endpoint in $global:endpoints){
@@ -770,6 +763,10 @@ Function CreateLabyrinth () {
                         $global:Finish=$endpoint
                     }
                 }
+            }
+            'Endpoint Random'{
+                $endpoint=$global:endpoints[(Get-Random -Minimum 0 -Maximum ($global:endpoints.Count-1))]
+                $global:Finish=@($endpoint[0],$endpoint[1])
             }
             'Endpoint Last' {
                 $global:Finish=$global:endpoints[($global:endpoints.Count-1)]
@@ -781,7 +778,7 @@ Function CreateLabyrinth () {
                 $global:Finish=@([math]::Round(($global:SizeX-1)/2),[math]::Round(($global:SizeY-1)/2))
             }
             'Random'{
-                $global:Finish=@(Get-Random -Minimum 1 -Maximum ($global:SizeX-1),Get-Random -Minimum 1 -Maximum ($global:SizeY-1))        }
+                $global:Finish=@(Get-Random -Minimum 1 -Maximum ($global:SizeX-1),Get-Random -Minimum 1 -Maximum ($global:SizeY-1))}
             'Top-Left' {$global:Finish=@(0,0)}
             'Top-Right'{$global:Finish=@(($global:SizeX-1),0)}
             'Bottom-Right'{$global:Finish=@(($global:SizeX-1),($global:SizeY-1))}
@@ -843,7 +840,7 @@ Function SolveLabyrinth {
                     $previouslocationY = $y
                     If($global:DrawWhileSolving){
                         DrawExplorer -x $x -y $y
-                        Start-Sleep -Milliseconds $global:PlayerPause
+                        #Start-Sleep -Milliseconds $global:PlayerPause
                     }
                 } Else {
                     $previouslocationX = -1
@@ -1058,7 +1055,7 @@ Function DrawExplorer {
         Switch($global:labyrinth[$x][$y]) {
             #Breadcrumbs
             {(240 -band $_) -eq 240} {
-                $global:Graphics.FillRectangle($global:brushlc,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
+                $global:Graphics.FillRectangle($global:brushBC,(($x)*$scalex)+$offsetx,(($y)*$scaleY)+$offsety,($RoomSizeX),($RoomsizeY))
             }
             #Start
             {(256 -band $_) -eq 256} {
@@ -1152,6 +1149,9 @@ $btnApply.Add_Click({
 $btnCancel.Add_Click({
     $FrmLabyrinthianSettings.Close()
 })
+$FrmLabyrinthian.Add_Shown({
+    InitLabyrinth
+})
 $lblCalc.Add_Click({
     If($timTimer.Enabled) {
         $timTimer.Stop()
@@ -1161,9 +1161,6 @@ $lblCalc.Add_Click({
         $timTimer.Start()
         $global:timerticks =0
     }
-})
-$FrmLabyrinthian.Add_Shown({
-    InitLabyrinth
 })
 $timTimer.Add_Tick({
     If ($global:isSolving){
