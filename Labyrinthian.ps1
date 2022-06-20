@@ -941,8 +941,8 @@ Function SolveLabyrinth {
                     For ($i=0;$i -lt $numofposdir;$i++) {
                         $difx = [math]::abs(($posdir[$i])[0] - $global:Finish[0])
                         $dify = [math]::abs(($posdir[$i])[1] - $global:Finish[1])
-                        $dif = $difx+$dify
-                        If($dif -lt $difmin) {
+                        $dif = [math]::Sqrt(($difx*$difx)+($dify*$dify))
+                        If($dif -le $difmin) {
                             $difmin = $dif
                             $choice = $i
                         }
