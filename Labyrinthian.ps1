@@ -22,11 +22,13 @@ $RegKeyPath = "HKCU:\Software\Labyrinthian"
 #Init Reg key
 If (Test-Path $RegKeyPath) {
     #Get-settings
+    $ErrorActionPreference="SilentlyContinue" #Error Supressing; see https://github.com/PowerShell/PowerShell/issues/5906
     $global:SizeX = Get-ItemPropertyValue -path $RegKeyPath -Name SizeX
     $global:SizeY= Get-ItemPropertyValue -path $RegKeyPath -Name SizeY
     $Global:DrawWhileBuilding = Get-ItemPropertyValue -path $RegKeyPath -Name DrawWhileBuilding
     $global:BuildPause= Get-ItemPropertyValue -path $RegKeyPath -Name BuildPause 
     $global:Randomness = Get-ItemPropertyValue -path $RegKeyPath -Name Randomness
+    $global:RandomnessFactor = Get-ItemPropertyValue -path $RegKeyPath -Name RandomnessFactor
     $global:CreateAlgoritmIndex = Get-ItemPropertyValue -path $RegKeyPath -Name CreateAlgoritmIndex
     $global:StartpointIndex = Get-ItemPropertyValue -path $RegKeyPath -Name StartpointIndex
     $global:FinishpointIndex = Get-ItemPropertyValue -path $RegKeyPath -Name FinishpointIndex
@@ -37,26 +39,28 @@ If (Test-Path $RegKeyPath) {
     $global:DeadEndFilling = Get-ItemPropertyValue -path $RegKeyPath -Name DeadEndFilling
     $global:SolveAlgoritmIndex = Get-ItemPropertyValue -path $RegKeyPath -Name SolveAlgoritmIndex
     $global:ClearLabBeforeSolving = Get-ItemPropertyValue -path $RegKeyPath -Name ClearLabBeforeSolving
-} Else {
-    #init settings
-    #Global settings Create
-    #Initial labyrint width & Height
-    $global:SizeX = 30
-    $global:SizeY= 15
-    $Global:DrawWhileBuilding = $true
-    $global:BuildPause= 1
-    $global:Randomness = 3
-    $global:CreateAlgoritmIndex = 0 
-    $global:StartpointIndex = 0
-    $global:FinishpointIndex = 0
+    $ErrorActionPreference="Continue"
+} 
+#init settings
+#Global settings Create
+#Initial labyrint width & Height
+If ($null -eq $global:SizeX) {$global:SizeX = 30}
+If ($null -eq $global:SizeY) {$global:SizeY= 15}
+If ($null -eq $Global:DrawWhileBuilding) {$Global:DrawWhileBuilding = $true}
+If ($null -eq $global:BuildPause) {$global:BuildPause= 1}
+If ($null -eq $global:Randomness){$global:Randomness = 3}
+If ($null -eq $global:RandomnessFactor){$global:RandomnessFactor = 10}
+If ($null -eq $global:CreateAlgoritmIndex){$global:CreateAlgoritmIndex = 0} 
+If ($null -eq $global:StartpointIndex){$global:StartpointIndex = 0}
+If ($null -eq $global:FinishpointIndex){$global:FinishpointIndex = 0}
 
-    #Global settings Solve
-    $global:PlayerPause = 2
-    $global:DrawWhileSolving = $true
-    $global:DeadEndFilling = $true
-    $global:SolveAlgoritmIndex =0
-    $global:ClearLabBeforeSolving = $true
-}
+#Global settings Solve
+If ($null -eq $global:PlayerPause){$global:PlayerPause = 2}
+If ($null -eq $global:DrawWhileSolving){$global:DrawWhileSolving = $true}
+If ($null -eq $global:DeadEndFilling){$global:DeadEndFilling = $true}
+If ($null -eq $global:SolveAlgoritmIndex){$global:SolveAlgoritmIndex =0}
+If ($null -eq $global:ClearLabBeforeSolving){$global:ClearLabBeforeSolving = $true}
+
 $global:Startpoints = @('Random','Center','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
 $Global:Finishpoints = @('Endpoint Random','Endpoint Far','Endpoint Last','Endpoint First','Center','Random','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
 $global:CreateAlgoritms =@('Depth-First','Prim','Wilson','Aldous-Broder','Eller')
@@ -626,6 +630,8 @@ Function CreateLabyrinth () {
                         DrawExplorer -x $x -y $y
                         Start-Sleep -Milliseconds $global:BuildPause
                     }
+                    #$global:Randomness = (Get-Random -Minimum 1 -Maximum $global:RandomnessFactor)
+                    #Write-Host $global:Randomness $r
                 } Else {
                     $pointer--
                     $x = $moved[$pointer][0]
@@ -1243,6 +1249,7 @@ $regkey = New-ItemProperty -Path $RegKeyPath -Name SizeY -PropertyType Dword -Va
 $regkey = New-ItemProperty -Path $RegKeyPath -Name DrawWhileBuilding -PropertyType Dword -Value $Global:DrawWhileBuilding
 $regkey = New-ItemProperty -Path $RegKeyPath -Name BuildPause -PropertyType Dword -Value $global:BuildPause
 $regkey = New-ItemProperty -Path $RegKeyPath -Name Randomness -PropertyType Dword -Value $global:Randomness
+$regkey = New-ItemProperty -Path $RegKeyPath -Name RandomnessFactor -PropertyType Dword -Value $global:RandomnessFactor
 $regkey = New-ItemProperty -Path $RegKeyPath -Name CreateAlgoritmIndex -PropertyType Dword -Value $global:CreateAlgoritmIndex
 $regkey = New-ItemProperty -Path $RegKeyPath -Name StartpointIndex -PropertyType Dword -Value $global:StartpointIndex
 $regkey = New-ItemProperty -Path $RegKeyPath -Name FinishpointIndex -PropertyType Dword -Value $global:FinishpointIndex
