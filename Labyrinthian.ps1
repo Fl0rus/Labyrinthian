@@ -18,30 +18,58 @@ $global:brushr = New-Object Drawing.SolidBrush Tomato
 $global:brushBC = New-Object Drawing.SolidBrush GreenYellow
 $global:brushPlayer = New-Object Drawing.SolidBrush Fuchsia
 
-#Global settings Create
-#Initial labyrint width & Height
-$global:SizeX = 30
-$global:SizeY= 15
-$Global:DrawWhileBuilding = $true
-$global:DrawWhileSolving = $true
-$global:BuildPause= 1
-$global:Randomness = 3
-$global:CreateAlgoritms =@('Depth-First','Prim','Wilson','Aldous-Broder','Eller')
-$global:CreateAlgoritm = 'Prim'
-$global:Startpoints = @('Random','Center','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
-$global:Startpoint = 'Random'
-$Global:Finishpoints = @('Endpoint Random','Endpoint Far','Endpoint Last','Endpoint First','Center','Random','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
-$global:Finishpoint = 'Endpoint Far'
+$RegKeyPath = "HKCU:\Software\Labyrinthian"
+#Init Reg key
+If (Test-Path $RegKeyPath) {
+    #Get-settings
+    $global:SizeX = Get-ItemPropertyValue -path $RegKeyPath -Name SizeX
+    $global:SizeY= Get-ItemPropertyValue -path $RegKeyPath -Name SizeY
+    $Global:DrawWhileBuilding = Get-ItemPropertyValue -path $RegKeyPath -Name DrawWhileBuilding
+    $global:BuildPause= Get-ItemPropertyValue -path $RegKeyPath -Name BuildPause 
+    $global:Randomness = Get-ItemPropertyValue -path $RegKeyPath -Name Randomness
+    $global:CreateAlgoritmIndex = Get-ItemPropertyValue -path $RegKeyPath -Name CreateAlgoritmIndex
+    $global:StartpointIndex = Get-ItemPropertyValue -path $RegKeyPath -Name StartpointIndex
+    $global:FinishpointIndex = Get-ItemPropertyValue -path $RegKeyPath -Name FinishpointIndex
 
-#Global settings Solve
-$global:PlayerPause = 2
-$global:DeadEndFilling = $true
+    #Global settings Solve
+    $global:PlayerPause = Get-ItemPropertyValue -path $RegKeyPath -Name PlayerPause
+    $global:DrawWhileSolving = Get-ItemPropertyValue -path $RegKeyPath -Name DrawWhileSolving
+    $global:DeadEndFilling = Get-ItemPropertyValue -path $RegKeyPath -Name DeadEndFilling
+    $global:SolveAlgoritmIndex = Get-ItemPropertyValue -path $RegKeyPath -Name SolveAlgoritmIndex
+    $global:ClearLabBeforeSolving = Get-ItemPropertyValue -path $RegKeyPath -Name ClearLabBeforeSolving
+} Else {
+    #init settings
+    #Global settings Create
+    #Initial labyrint width & Height
+    $global:SizeX = 30
+    $global:SizeY= 15
+    $Global:DrawWhileBuilding = $true
+    $global:BuildPause= 1
+    $global:Randomness = 3
+    $global:CreateAlgoritmIndex = 0 
+    $global:StartpointIndex = 0
+    $global:FinishpointIndex = 0
+
+    #Global settings Solve
+    $global:PlayerPause = 2
+    $global:DrawWhileSolving = $true
+    $global:DeadEndFilling = $true
+    $global:SolveAlgoritmIndex =0
+    $global:ClearLabBeforeSolving = $true
+}
+$global:Startpoints = @('Random','Center','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
+$Global:Finishpoints = @('Endpoint Random','Endpoint Far','Endpoint Last','Endpoint First','Center','Random','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
+$global:CreateAlgoritms =@('Depth-First','Prim','Wilson','Aldous-Broder','Eller')
 $global:SolveAlgoritms =@('Radar','Follow-Wall','Random','Fixed')
-$global:SolveAlgoritm = 'Follow-Wall'
-$global:ClearLabBeforeSolving = $true
+$global:SolveAlgoritm = $global:SolveAlgoritms[$global:SolveAlgoritmIndex] 
+$global:CreateAlgoritm = $global:CreateAlgoritms[$global:CreateAlgoritmIndex]
+$global:Startpoint = $global:Startpoints[$global:StartpointIndex]
+$global:Finishpoint = $global:Finishpoints[$global:FinishpointIndex]
+
 $global:maxmoves=($global:SizeX*$global:SizeY)
 $global:moves = 0
 
+#### Form controls
 $FrmLabyrinthian                            = New-Object system.Windows.Forms.Form
 $FrmLabyrinthian.ClientSize                 = "$Global:FrmSizeX,$Global:FrmSizeY"
 $FrmLabyrinthian.text                       = "Labyrinth"
@@ -1205,4 +1233,22 @@ $FrmLabyrinthian.Add_FormClosed({
     $timTimer.Dispose()
 })
 [void][System.Windows.Forms.Application]::Run($FrmLabyrinthian)
+
+#Create Key for Settings
+$regkey = New-Item -Path $RegKeyPath -Force
+$regkey = Set-Item -Path $RegKeyPath -Value "Labyrinthian keys"
+#Save settings to registry
+$regkey = New-ItemProperty -Path $RegKeyPath -Name SizeX -PropertyType Dword -Value $global:SizeX
+$regkey = New-ItemProperty -Path $RegKeyPath -Name SizeY -PropertyType Dword -Value $global:SizeY
+$regkey = New-ItemProperty -Path $RegKeyPath -Name DrawWhileBuilding -PropertyType Dword -Value $Global:DrawWhileBuilding
+$regkey = New-ItemProperty -Path $RegKeyPath -Name BuildPause -PropertyType Dword -Value $global:BuildPause
+$regkey = New-ItemProperty -Path $RegKeyPath -Name Randomness -PropertyType Dword -Value $global:Randomness
+$regkey = New-ItemProperty -Path $RegKeyPath -Name CreateAlgoritmIndex -PropertyType Dword -Value $global:CreateAlgoritmIndex
+$regkey = New-ItemProperty -Path $RegKeyPath -Name StartpointIndex -PropertyType Dword -Value $global:StartpointIndex
+$regkey = New-ItemProperty -Path $RegKeyPath -Name FinishpointIndex -PropertyType Dword -Value $global:FinishpointIndex
+$regkey = New-ItemProperty -Path $RegKeyPath -Name PlayerPause -PropertyType Dword -Value $global:PlayerPause
+$regkey = New-ItemProperty -Path $RegKeyPath -Name DrawWhileSolving -PropertyType Dword -Value $global:DrawWhileSolving
+$regkey = New-ItemProperty -Path $RegKeyPath -Name DeadEndFilling -PropertyType Dword -Value $global:DeadEndFilling
+$regkey = New-ItemProperty -Path $RegKeyPath -Name SolveAlgoritmIndex -PropertyType Dword -Value $global:SolveAlgoritmIndex 
+$regkey = New-ItemProperty -Path $RegKeyPath -Name ClearLabBeforeSolving -PropertyType Dword -Value $global:ClearLabBeforeSolving 
 #End
