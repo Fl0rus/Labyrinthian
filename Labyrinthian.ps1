@@ -7,6 +7,11 @@ Clear-Host
 $Global:FrmSizeX = 1280
 $Global:FrmSizeY = 720
 
+$Global:Startpoints = @('Random','Center','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
+$Global:Finishpoints = @('Endpoint Random','Endpoint Far','Endpoint Last','Endpoint First','Center','Random','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
+$Global:CreateAlgoritms = @('Depth-First','Prim','Wilson','Aldous-Broder','Sidewinder','Eller','Rusty Lake','Mines of Moria')
+$Global:SolveAlgoritms =@('Radar','Follow-Wall','Fixed-UDLR','Random')
+
 #Global brushes
 $Global:brushw = New-Object Drawing.SolidBrush White
 #$Global:brushbl = New-Object Drawing.SolidBrush Black
@@ -54,7 +59,6 @@ If ($null -eq $Global:MoreRandomness){$Global:MoreRandomness = $true}
 If ($null -eq $Global:CreateAlgoritmIndex){$Global:CreateAlgoritmIndex = 0} 
 If ($null -eq $Global:StartpointIndex){$Global:StartpointIndex = 0}
 If ($null -eq $Global:FinishpointIndex){$Global:FinishpointIndex = 0}
-
 #Global settings Solve
 If ($null -eq $Global:PlayerPause){$Global:PlayerPause = 2}
 If ($null -eq $Global:DrawWhileSolving){$Global:DrawWhileSolving = $true}
@@ -62,10 +66,6 @@ If ($null -eq $Global:DeadEndFilling){$Global:DeadEndFilling = $true}
 If ($null -eq $Global:SolveAlgoritmIndex){$Global:SolveAlgoritmIndex=0}
 If ($null -eq $Global:ClearLabBeforeSolving){$Global:ClearLabBeforeSolving = $true}
 
-$Global:Startpoints = @('Random','Center','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
-$Global:Finishpoints = @('Endpoint Random','Endpoint Far','Endpoint Last','Endpoint First','Center','Random','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
-$Global:CreateAlgoritms =@('Depth-First','Prim','Wilson','Aldous-Broder','Eller')
-$Global:SolveAlgoritms =@('Radar','Follow-Wall','Random','Fixed')
 $Global:SolveAlgoritm = $Global:SolveAlgoritms[$Global:SolveAlgoritmIndex] 
 $Global:CreateAlgoritm = $Global:CreateAlgoritms[$Global:CreateAlgoritmIndex]
 $Global:Startpoint = $Global:Startpoints[$Global:StartpointIndex]
@@ -476,6 +476,7 @@ Function ShowSettings(){
         $sldRandom.Value = $Global:Randomness
         $sldRandomNum.Value = $Global:Randomness
     }
+    $cmbCreateAlgoritm.SelectedIndex = $Global:CreateAlgoritmIndex
     $cmbSolveAlgoritm.SelectedIndex = $Global:SolveAlgoritmIndex
     $cmbStartpoint.SelectedIndex = $Global:StartpointIndex
     $cmbFinishpoint.SelectedIndex = $Global:FinishpointIndex 
@@ -511,7 +512,7 @@ Function SaveSettings {
     }
     If ($Global:CreateAlgoritm -ne $cmbCreateAlgoritm.SelectedItem) {
         $Global:CreateAlgoritm = $cmbCreateAlgoritm.SelectedItem 
-        $Global:CreateAlgoritmIndex = $cmbCreateAlgoritmIndex.SelectedIndex 
+        $Global:CreateAlgoritmIndex = $cmbCreateAlgoritm.SelectedIndex 
     }
     $Global:Startpoint = $cmbStartpoint.SelectedItem
     $Global:StartpointIndex = $cmbStartpoint.SelectedIndex
@@ -996,7 +997,7 @@ Function SolveLabyrinth {
                     $movechoice = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
                     $direction = $movechoice[2]
                 }
-                'Fixed' {
+                'Fixed-UDLR' {
                     $movechoice = $posDir[0]
                     $direction = $movechoice[2]
                 }
