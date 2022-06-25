@@ -4,8 +4,8 @@ Add-Type -AssemblyName PresentationCore,PresentationFramework
 [System.Windows.Forms.Application]::EnableVisualStyles()
 Clear-Host
 
-$Global:FrmSizeX = 640
-$Global:FrmSizeY = 480
+$Global:FrmSizeX = 1280
+$Global:FrmSizeY = 720
 
 #Global brushes
 $Global:brushw = New-Object Drawing.SolidBrush White
@@ -732,7 +732,7 @@ Function CreateLabyrinth () {
                     $x = [int]($nextspot.split(',')[0])
                     $y = [int]($nextspot.split(',')[1])
                     $progress++
-                } Elseif ($pointer -eq 0) {
+                } Elseif ($pointer -le 1) {
                     $pointer--
                 } Else {
                     $compare = $Global:labyrinth[$x][$y] -band 15
@@ -740,15 +740,12 @@ Function CreateLabyrinth () {
                         $Global:endpoints.Add(@($x,$y))
                     }
                     #$removespot = $moved | Where-object {$_[0] -eq $x -and $_[1] -eq $y}
-                    $removespotindex = $moved.indexof("$x,$y")
                     $pointer--
-                    If ($pointer -gt 0) {
-                        #$moved.Remove($removespot)
-                        $moved.RemoveAt($removespotindex)
-                        $nextspot = $moved[(Get-Random -Minimum 0 -Maximum (($moved.count)-1))] 
-                        $x = [int]($nextspot.split(',')[0])
-                        $y = [int]($nextspot.split(',')[1])
-                    }
+                    #$moved.Remove($removespot)
+                    $moved.RemoveAt($moved.indexof("$x,$y"))
+                    $nextspot = $moved[(Get-Random -Minimum 0 -Maximum (($moved.count)-1))] 
+                    $x = [int]($nextspot.split(',')[0])
+                    $y = [int]($nextspot.split(',')[1])
                     #Write-host "Step $pointer = Niewe scan op punt $x $y"
                 }
             }
