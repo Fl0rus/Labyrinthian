@@ -4,8 +4,6 @@ Add-Type -AssemblyName PresentationCore,PresentationFramework
 [System.Windows.Forms.Application]::EnableVisualStyles()
 Clear-Host
 
-$Global:FrmSizeX = 1280
-$Global:FrmSizeY = 720
 
 $Global:Startpoints = @('Random','Center','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
 $Global:Finishpoints = @('Endpoint Random','Endpoint Far','Endpoint Last','Endpoint First','Center','Random','Top-Left','Top-Right','Bottom-Right','Bottom-Left')
@@ -26,8 +24,11 @@ $Global:brushPlayer = New-Object Drawing.SolidBrush Fuchsia
 $RegKeyPath = "HKCU:\Software\Labyrinthian"
 #Init Reg key
 If (Test-Path $RegKeyPath) {
+    $ErrorActionPreference="SilentlyContinue" #Error Supressing because of bug in Get-ItemPoropertyValue; see https://github.com/PowerShell/PowerShell/issues/5906
     #Get-settings
-    $ErrorActionPreference="SilentlyContinue" #Error Supressing; see https://github.com/PowerShell/PowerShell/issues/5906
+    $Global:FrmSizeX = Get-ItemPropertyValue -path $RegKeyPath -Name FRMSizeX
+    $Global:FrmSizeY = Get-ItemPropertyValue -path $RegKeyPath -Name FRMSizeY
+    #global settings Create
     $Global:SizeX = Get-ItemPropertyValue -path $RegKeyPath -Name SizeX
     $Global:SizeY= Get-ItemPropertyValue -path $RegKeyPath -Name SizeY
     $Global:DrawWhileBuilding = Get-ItemPropertyValue -path $RegKeyPath -Name DrawWhileBuilding
@@ -50,6 +51,8 @@ If (Test-Path $RegKeyPath) {
 #init settings
 #Global settings Create
 #Initial labyrint width & Height
+If ($null -eq $Global:FrmSizeX) {$Global:FrmSizeX = 1280}
+If ($null -eq $Global:FrmSizeY) {$Global:FrmSizeY = 720}
 If ($null -eq $Global:SizeX) {$Global:SizeX = 30}
 If ($null -eq $Global:SizeY) {$Global:SizeY= 15}
 If ($null -eq $Global:DrawWhileBuilding) {$Global:DrawWhileBuilding = $true}
@@ -1218,7 +1221,12 @@ $sldBuildSpeedNum.Add_ValueChanged({ChangeBuildSpeedNum})
 $sldRandom.Add_Scroll({ ChangeRandom })
 $sldRandomNum.Add_ValueChanged({ChangeRandomNum})
 
-$FrmLabyrinthian.Add_ResizeEnd({ClearLabyrinth;DrawLabyrinth;$prgCalc.width=$FrmLabyrinthian.width-225})
+$FrmLabyrinthian.Add_ResizeEnd({
+    $Global:FrmSizeX = $FrmLabyrinthian.Width
+    $Global:FrmSizeY = $FrmLabyrinthian.Height
+    ClearLabyrinth
+    DrawLabyrinth
+    $prgCalc.width=$FrmLabyrinthian.width-225})
 $FrmLabyrinthian.Add_SizeChanged({
     If ($FrmLabyrinthian.WindowState -ne 'Normal' -or $Global:PreviousState -ne 'Normal') {
         ClearLabyrinth;DrawLabyrinth;$prgCalc.width=$FrmLabyrinthian.width-225
@@ -1276,6 +1284,8 @@ $FrmLabyrinthian.Add_FormClosed({
 $regkey = New-Item -Path $RegKeyPath -Force
 $regkey = Set-Item -Path $RegKeyPath -Value "Labyrinthian keys"
 #Save settings to registry
+$regkey = New-ItemProperty -Path $RegKeyPath -Name FRMSizeX -PropertyType Dword -Value $Global:FrmSizeX
+$regkey = New-ItemProperty -Path $RegKeyPath -Name FRMSizeY -PropertyType Dword -Value $Global:FrmSizeY
 $regkey = New-ItemProperty -Path $RegKeyPath -Name SizeX -PropertyType Dword -Value $Global:SizeX
 $regkey = New-ItemProperty -Path $RegKeyPath -Name SizeY -PropertyType Dword -Value $Global:SizeY
 $regkey = New-ItemProperty -Path $RegKeyPath -Name DrawWhileBuilding -PropertyType Dword -Value $Global:DrawWhileBuilding
