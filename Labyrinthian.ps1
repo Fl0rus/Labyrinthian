@@ -475,7 +475,8 @@ Function ShowSettings() {
     $chkMoreRandomness.Checked = $Script:MoreRandomness
     If ($cmbCreateAlgoritm.SelectedItem -eq 'Depth-First') {
         $chkMoreRandomness.Enabled = $true
-    } Else {
+    }
+    Else {
         $chkMoreRandomness.Enabled = $false
     }
     $sldRandom.Value = $Script:Randomness
@@ -741,38 +742,65 @@ Function CreateLabyrinth () {
                 }
             }
         }
-        'Wilson-ip' {
-            [System.Collections.ArrayList]$Searchpath = @()
-            $moved.add(@(Get-Random -Minimum 0 -Maximum $Script:SizeX), (Get-Random -Minimum 0 -Maximum $Script:SizeY))
+        'Wilson' {
+            [System.Collections.ArrayList]$notmoved = @()
+            For ($xx = 0; $xx -lt $Script:SizeX; $xx++) {
+                For ($yy = 0; $yy -lt $Script:SizeY; $yy++) {
+                    $notmoved.Add("$xx,$yy")
+                }
+            }
+            #Add start to set Moved)
+            $moved.add("$x, $y")
+            $notmoved.RemoveAt($notmoved.indexof("$x,$y"))
+            #get random point from all non-moved
+            $index = Get-Random -Minimum 0 -Maximum $notmoved.Count
+            $x = [int](($notmoved[$index]).split(',')[0])
+            $y = [int](($notmoved[$index]).split(',')[1])
             While ($pointer -ge 0) {
                 [System.Collections.ArrayList]$posDir = @()
-                If ($y -gt 0) {
-                    If (($Script:labyrinth[$x][$y - 1] -bor 15) -eq 15) {
+                If ($null -ne ($moved | Where-Object { $_ -eq "$x,$y-1" })) {
+                    $posDir.Add(@($Script:labyrinth[$x][$y - 1], $x, ($y - 1), 1)) #Up
+                }
+                If ($null -ne ($moved | Where-Object { $_ -eq "$x,$y+1" })) {
+                    $posDir.Add(@($Script:labyrinth[$x][$y + 1], $x, ($y - 1), 1)) #Up
+                }
+                If ($null -ne ($moved | Where-Object { $_ -eq "$x-1,$y" })) {
+                    $posDir.Add(@($Script:labyrinth[$x - 1][$y], $x, ($y - 1), 1)) #Up
+                }
+                If ($null -ne ($moved | Where-Object { $_ -eq "$x+1,$y-1" })) {
+                    $posDir.Add(@($Script:labyrinth[$x + 1][$y], $x, ($y - 1), 1)) #Up
+                }
+                If ($posdir.count -ne 0) {
+                    $x = $movedconnections.split(',')[0]
+                    $y = $movedconnections.split(',')[1]
+                }
+                Else {
+                    If (($y -gt 0) -and ($Script:labyrinth[$x][$y - 1] -eq 0)) {
                         $posDir.Add(@($Script:labyrinth[$x][$y - 1], $x, ($y - 1), 1)) #Up
-                    }
-                } #up
-                If ($y -lt ( $Script:SizeY - 1)) {
-                    If (($Script:labyrinth[$x][$y + 1] -bor 15) -eq 15 ) {
+                    } #up
+                    If (($y -lt ( $Script:SizeY - 1)) -and ($Script:labyrinth[$x][$y + 1] -eq 0 )) {
                         $posDir.Add(@(($Script:labyrinth[$x][$y + 1]), $x, ($y + 1), 2)) #Down
-                    }
-                } #down
-                If ($x -gt 0) {
-                    If (($Script:labyrinth[$x - 1][$y] -bor 15) -eq 15) {
+                    } #down
+                    If (($x -gt 0) -and ($Script:labyrinth[$x - 1][$y] -eq 0)) {
                         $posDir.Add(@(($Script:labyrinth[$x - 1][$y]), ($x - 1), $y, 4)) #left
-                    }
-                }  #left
-                If ($x -lt ( $Script:SizeX - 1)) {
-                    If (($Script:labyrinth[$x + 1][$y] -bor 15) -eq 15) {
+                    }  #left
+                    If (($x -lt ( $Script:SizeX - 1)) -and ($Script:labyrinth[$x + 1][$y] -eq 0)) {
                         $posDir.Add(@(($Script:labyrinth[$x + 1][$y]), ($x + 1), $y, 8))#right
-                    }
-                } #right
+                    } #right
+                }
                 $numofposdir = $posdir.Count
                 If ($numofposdir -ne 0) {
-                    $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
-                    $Script:labyrinth[$x][$y] += $movedetection[3]
-                    If ($Script:DrawWhileBuilding) {
-                        DrawExplorer -x $x -y $y
-                    } #Random direction
+                    $pointer++
+                    $movedetection = $posdir | Where-Object { $_[3] -eq $previousmove }
+                    If ($null -eq $movedetection) {
+                        $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
+                    }
+                    Elseif ((Get-Random -Minimum 0 -Maximum $Script:Randomness) -eq 0) {
+                        $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
+                    }
+                    $previousmove = $movedetection[3]
+                    $Script:labyrinth[$x][$y] += $movedetection[3] ## Build door
+                    If ($Script:DrawWhileBuilding) { DrawExplorer -x $x -y $y }
                     $x = $movedetection[1]
                     $y = $movedetection[2]
                     Switch ($movedetection[3]) {
@@ -781,27 +809,19 @@ Function CreateLabyrinth () {
                         4 { $value = 8 }
                         8 { $value = 4 }
                     }
-                    $Script:labyrinth[$x][$y] += $value ## Door to the other side
-                    $nextpoint = $Searchpath | Where-Object { $_[0] -eq $x -and $_[1] -eq $y }
-                    If ($null -eq $nextpoint) {
-                        $nextpoint = $moved | Where-Object { $_[0] -eq $x -and $_[1] -eq $y }
-                        If ($null -eq $nextpoint) {
-                            $Searchpath.add(@($x, $y))
-                        }
-                        Else {
-
-                        }
-                    }
-                    Else {
-
-                    }
+                    $Script:labyrinth[$x][$y] += $value                     ## Door to the other side
+                    If ($Script:DrawWhileBuilding) { DrawExplorer -x $x -y $y }
+                }
+                Else {
+                    $pointer--
+                    $index = Get-Random -Minimum 0 -Maximum ($notmoved.Count)
+                    $x = [int](($notmoved[$index]).split(',')[0])
+                    $y = [int](($notmoved[$index]).split(',')[1])
                 }
             }
         }
         'Eller-ip' {
             While ($Workingrow -le $Script:SizeY) {
-
-
                 $WorkingRow++
             }
         }
@@ -908,10 +928,10 @@ Function SolveLabyrinth {
                 $x = $movechoice[0]
                 $y = $movechoice[1]
                 [System.Collections.ArrayList]$posDir = @()
-                If (($Script:labyrinth[$x][$y] -band 1) -eq 1 -and -not (($x -eq $previouslocationX) -and (($y - 1) -eq $previouslocationY))) { $posdir.add(@($x, ($y - 1), 32)) }
-                If (($Script:labyrinth[$x][$y] -band 2) -eq 2 -and -not (($x -eq $previouslocationX) -and (($y + 1) -eq $previouslocationY))) { $posdir.add(@($x, ($y + 1), 16)) }
-                If (($Script:labyrinth[$x][$y] -band 4) -eq 4 -and -not ((($x - 1) -eq $previouslocationX) -and ($y -eq $previouslocationY))) { $posdir.add(@(($x - 1), $y, 128)) }
-                If (($Script:labyrinth[$x][$y] -band 8) -eq 8 -and -not ((($x + 1) -eq $previouslocationX) -and ($y -eq $previouslocationY))) { $posdir.add(@(($x + 1), $y, 64)) }
+                If (($Script:labyrinth[$x][$y] -band 769) -eq 1 -and -not (($x -eq $previouslocationX) -and (($y - 1) -eq $previouslocationY))) { $posdir.add(@($x, ($y - 1), 32)) }
+                If (($Script:labyrinth[$x][$y] -band 770) -eq 2 -and -not (($x -eq $previouslocationX) -and (($y + 1) -eq $previouslocationY))) { $posdir.add(@($x, ($y + 1), 16)) }
+                If (($Script:labyrinth[$x][$y] -band 772) -eq 4 -and -not ((($x - 1) -eq $previouslocationX) -and ($y -eq $previouslocationY))) { $posdir.add(@(($x - 1), $y, 128)) }
+                If (($Script:labyrinth[$x][$y] -band 776) -eq 8 -and -not ((($x + 1) -eq $previouslocationX) -and ($y -eq $previouslocationY))) { $posdir.add(@(($x + 1), $y, 64)) }
                 $numofposdir = $posdir.Count
                 If ($numofposdir -eq 1) {
                     $Script:labyrinth[$x][$y] += 240
@@ -1252,12 +1272,13 @@ $lblCalc.Add_Click({
         }
     })
 $cmbCreateAlgoritm.Add_SelectedIndexChanged({
-    If ($cmbCreateAlgoritm.SelectedItem -eq 'Depth-First') {
-        $chkMoreRandomness.Enabled = $true
-    } Else {
-        $chkMoreRandomness.Enabled = $false
-    }
-})
+        If ($cmbCreateAlgoritm.SelectedItem -eq 'Depth-First') {
+            $chkMoreRandomness.Enabled = $true
+        }
+        Else {
+            $chkMoreRandomness.Enabled = $false
+        }
+    })
 $timTimer.Add_Tick({
         If ($Script:isSolving) {
             $lblCalc.ForeColor = 'Red'
@@ -1283,24 +1304,24 @@ $FrmLabyrinthian.Add_FormClosed({
 [void][System.Windows.Forms.Application]::Run($FrmLabyrinthian)
 
 #Create Key for Settings
-$regkey = New-Item -Path $RegKeyPath -Force
-$regkey = Set-Item -Path $RegKeyPath -Value 'Labyrinthian keys'
+[void](New-Item -Path $RegKeyPath -Force)
+[void](Set-Item -Path $RegKeyPath -Value 'Labyrinthian keys')
 #Save settings to registry
-$regkey = New-ItemProperty -Path $RegKeyPath -Name FRMSizeX -PropertyType Dword -Value $Script:FrmSizeX
-$regkey = New-ItemProperty -Path $RegKeyPath -Name FRMSizeY -PropertyType Dword -Value $Script:FrmSizeY
-$regkey = New-ItemProperty -Path $RegKeyPath -Name SizeX -PropertyType Dword -Value $Script:SizeX
-$regkey = New-ItemProperty -Path $RegKeyPath -Name SizeY -PropertyType Dword -Value $Script:SizeY
-$regkey = New-ItemProperty -Path $RegKeyPath -Name DrawWhileBuilding -PropertyType Dword -Value $Script:DrawWhileBuilding
-$regkey = New-ItemProperty -Path $RegKeyPath -Name BuildPause -PropertyType Dword -Value $Script:BuildPause
-$regkey = New-ItemProperty -Path $RegKeyPath -Name Randomness -PropertyType Dword -Value $Script:Randomness
-$regkey = New-ItemProperty -Path $RegKeyPath -Name MoreRandomness -PropertyType Dword -Value $Script:MoreRandomness
-$regkey = New-ItemProperty -Path $RegKeyPath -Name RandomnessFactor -PropertyType Dword -Value $Script:MoreRandomness
-$regkey = New-ItemProperty -Path $RegKeyPath -Name CreateAlgoritmIndex -PropertyType Dword -Value $Script:CreateAlgoritmIndex
-$regkey = New-ItemProperty -Path $RegKeyPath -Name StartpointIndex -PropertyType Dword -Value $Script:StartpointIndex
-$regkey = New-ItemProperty -Path $RegKeyPath -Name FinishpointIndex -PropertyType Dword -Value $Script:FinishpointIndex
-$regkey = New-ItemProperty -Path $RegKeyPath -Name PlayerPause -PropertyType Dword -Value $Script:PlayerPause
-$regkey = New-ItemProperty -Path $RegKeyPath -Name DrawWhileSolving -PropertyType Dword -Value $Script:DrawWhileSolving
-$regkey = New-ItemProperty -Path $RegKeyPath -Name DeadEndFilling -PropertyType Dword -Value $Script:DeadEndFilling
-$regkey = New-ItemProperty -Path $RegKeyPath -Name SolveAlgoritmIndex -PropertyType Dword -Value $Script:SolveAlgoritmIndex 
-$regkey = New-ItemProperty -Path $RegKeyPath -Name ClearLabBeforeSolving -PropertyType Dword -Value $Script:ClearLabBeforeSolving 
+[void](New-ItemProperty -Path $RegKeyPath -Name FRMSizeX -PropertyType Dword -Value $Script:FrmSizeX)
+[void](New-ItemProperty -Path $RegKeyPath -Name FRMSizeY -PropertyType Dword -Value $Script:FrmSizeY)
+[void](New-ItemProperty -Path $RegKeyPath -Name SizeX -PropertyType Dword -Value $Script:SizeX)
+[void](New-ItemProperty -Path $RegKeyPath -Name SizeY -PropertyType Dword -Value $Script:SizeY)
+[void](New-ItemProperty -Path $RegKeyPath -Name DrawWhileBuilding -PropertyType Dword -Value $Script:DrawWhileBuilding)
+[void](New-ItemProperty -Path $RegKeyPath -Name BuildPause -PropertyType Dword -Value $Script:BuildPause)
+[void](New-ItemProperty -Path $RegKeyPath -Name Randomness -PropertyType Dword -Value $Script:Randomness)
+[void](New-ItemProperty -Path $RegKeyPath -Name MoreRandomness -PropertyType Dword -Value $Script:MoreRandomness)
+[void](New-ItemProperty -Path $RegKeyPath -Name RandomnessFactor -PropertyType Dword -Value $Script:RandomFactor)
+[void](New-ItemProperty -Path $RegKeyPath -Name CreateAlgoritmIndex -PropertyType Dword -Value $Script:CreateAlgoritmIndex)
+[void](New-ItemProperty -Path $RegKeyPath -Name StartpointIndex -PropertyType Dword -Value $Script:StartpointIndex)
+[void](New-ItemProperty -Path $RegKeyPath -Name FinishpointIndex -PropertyType Dword -Value $Script:FinishpointIndex)
+[void](New-ItemProperty -Path $RegKeyPath -Name PlayerPause -PropertyType Dword -Value $Script:PlayerPause)
+[void](New-ItemProperty -Path $RegKeyPath -Name DrawWhileSolving -PropertyType Dword -Value $Script:DrawWhileSolving)
+[void](New-ItemProperty -Path $RegKeyPath -Name DeadEndFilling -PropertyType Dword -Value $Script:DeadEndFilling)
+[void](New-ItemProperty -Path $RegKeyPath -Name SolveAlgoritmIndex -PropertyType Dword -Value $Script:SolveAlgoritmIndex) 
+[void](New-ItemProperty -Path $RegKeyPath -Name ClearLabBeforeSolving -PropertyType Dword -Value $Script:ClearLabBeforeSolving) 
 #End
