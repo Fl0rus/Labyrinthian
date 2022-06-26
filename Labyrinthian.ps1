@@ -259,11 +259,11 @@ $lblRandom = New-Object System.Windows.Forms.Label
 $lblRandom.width = 80
 $lblRandom.height = 30
 $lblRandom.location = New-Object System.Drawing.Point(10, 245)
-$lblRandom.Text = 'Randomness (Depth-First)'
+$lblRandom.Text = 'Randomness'
 
 $sldRandom = New-Object System.Windows.Forms.Trackbar
 $sldRandom.AutoSize = $true
-$sldRandom.Text = 'Randomness (Depth-First)'
+$sldRandom.Text = 'Randomness'
 $sldRandom.width = 130
 $sldRandom.Height = 30
 $sldRandom.location = New-Object System.Drawing.Point(90, 245)
@@ -282,8 +282,8 @@ $sldRandomNum.Minimum = 1
 
 $chkMoreRandomness = New-Object System.Windows.Forms.Checkbox
 $chkMoreRandomness.AutoSize = $true
-$chkMoreRandomness.Width = 25
-$chkMoreRandomness.Height = 25
+$chkMoreRandomness.Width = 120
+$chkMoreRandomness.Height = 30
 $chkMoreRandomness.Text = 'More Randomness'
 $chkMoreRandomness.Location = New-Object System.Drawing.Point(275, 245)
 
@@ -473,14 +473,13 @@ Function ShowSettings() {
     $sldBuildSpeed.Value = $Script:BuildPause
     $sldBuildSpeedNum.value = $Script:BuildPause
     $chkMoreRandomness.Checked = $Script:MoreRandomness
-    If ($Script:MoreRandomness) {
-        $sldRandom.Value = $Script:RandomFactor
-        $sldRandomNum.Value = $Script:RandomFactor
+    If ($cmbCreateAlgoritm.SelectedItem -eq 'Depth-First') {
+        $chkMoreRandomness.Enabled = $true
+    } Else {
+        $chkMoreRandomness.Enabled = $false
     }
-    Else {
-        $sldRandom.Value = $Script:Randomness
-        $sldRandomNum.Value = $Script:Randomness
-    }
+    $sldRandom.Value = $Script:Randomness
+    $sldRandomNum.Value = $Script:Randomness
     $cmbCreateAlgoritm.SelectedIndex = $Script:CreateAlgoritmIndex
     $cmbSolveAlgoritm.SelectedIndex = $Script:SolveAlgoritmIndex
     $cmbStartpoint.SelectedIndex = $Script:StartpointIndex
@@ -507,6 +506,7 @@ Function SaveSettings {
     $Script:MoreRandomness = $chkMoreRandomness.Checked
     If ($Script:MoreRandomness) {
         $Script:RandomFactor = $sldRandom.Value
+        $Script:RandomNess = $sldRandom.Value
     }
     Else {
         $Script:RandomNess = $sldRandom.Value
@@ -597,27 +597,18 @@ Function CreateLabyrinth () {
             If ($Script:DrawWhileBuilding) { DrawExplorer -x $x -y $y }
             While ($pointer -ge 0) {
                 [System.Collections.ArrayList]$posDir = @()
-                If ($y -gt 0) {
-                    If ($Script:labyrinth[$x][$y - 1] -eq 0) {
-                        $posDir.Add(@($Script:labyrinth[$x][$y - 1], $x, ($y - 1), 1)) #Up
-                    }
+                If (($y -gt 0) -and ($Script:labyrinth[$x][$y - 1] -eq 0)) {
+                    $posDir.Add(@($Script:labyrinth[$x][$y - 1], $x, ($y - 1), 1)) #Up
                 } #up
-                If ($y -lt ( $Script:SizeY - 1)) {
-                    If ($Script:labyrinth[$x][$y + 1] -eq 0 ) {
-                        $posDir.Add(@(($Script:labyrinth[$x][$y + 1]), $x, ($y + 1), 2)) #Down
-                    }
+                If (($y -lt ( $Script:SizeY - 1)) -and ($Script:labyrinth[$x][$y + 1] -eq 0 )) {
+                    $posDir.Add(@(($Script:labyrinth[$x][$y + 1]), $x, ($y + 1), 2)) #Down
                 } #down
-                If ($x -gt 0) {
-                    If ($Script:labyrinth[$x - 1][$y] -eq 0) {
-                        $posDir.Add(@(($Script:labyrinth[$x - 1][$y]), ($x - 1), $y, 4)) #left
-                    }
+                If (($x -gt 0) -and ($Script:labyrinth[$x - 1][$y] -eq 0)) {
+                    $posDir.Add(@(($Script:labyrinth[$x - 1][$y]), ($x - 1), $y, 4)) #left
                 }  #left
-                If ($x -lt ( $Script:SizeX - 1)) {
-                    If ($Script:labyrinth[$x + 1][$y] -eq 0) {
-                        $posDir.Add(@(($Script:labyrinth[$x + 1][$y]), ($x + 1), $y, 8))#right
-                    }
+                If (($x -lt ( $Script:SizeX - 1)) -and ($Script:labyrinth[$x + 1][$y] -eq 0)) {
+                    $posDir.Add(@(($Script:labyrinth[$x + 1][$y]), ($x + 1), $y, 8))#right
                 } #right
-                #Random direction
                 $numofposdir = $posdir.Count
                 If ($numofposdir -ne 0) {
                     $movedetection = $posdir | Where-Object { $_[3] -eq $previousmove }
@@ -628,19 +619,17 @@ Function CreateLabyrinth () {
                         $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
                     }
                     $previousmove = $movedetection[3]
-                    #deur gevonden
-                    $Script:labyrinth[$x][$y] += $movedetection[3]
+                    $Script:labyrinth[$x][$y] += $movedetection[3] ## Build door
                     $moved.Add("$x,$y")
                     $pointer = $moved.count
                     $x = $movedetection[1]
                     $y = $movedetection[2]
-                    #Deur naar de andere kant!
                     Switch ($movedetection[3]) {
                         1 { $value = 2 }
                         2 { $value = 1 }
                         4 { $value = 8 }
                         8 { $value = 4 }
-                    }
+                    }                     ## Door to the other side
                     $Script:labyrinth[$x][$y] += $value
                     #Write-host "Step $pointer = Moved to $x $y"
                     $prgCalc.Value = $progress
@@ -668,7 +657,7 @@ Function CreateLabyrinth () {
                     $pointer--
                     $x = [int](($moved[$pointer]).Split(','))[0]
                     $y = [int](($moved[$pointer]).Split(','))[1]
-                    #Write-host "Step $pointer = Niewe scan op punt $x $y"
+                    #Write-host "Step $pointer = New scan at $x $y"
                 }
             }
         }
@@ -677,52 +666,41 @@ Function CreateLabyrinth () {
             If ($Script:DrawWhileBuilding) { DrawExplorer -x $x -y $y }
             While ($pointer -ge 0) {
                 [System.Collections.ArrayList]$posDir = @()
-                If ($y -gt 0) {
-                    If ($Script:labyrinth[$x][$y - 1] -eq 0) {
-                        $posDir.Add(@($Script:labyrinth[$x][$y - 1], $x, ($y - 1), 1)) #Up
-                    }
+                If (($y -gt 0) -and ($Script:labyrinth[$x][$y - 1] -eq 0)) {
+                    $posDir.Add(@($Script:labyrinth[$x][$y - 1], $x, ($y - 1), 1)) #Up
                 } #up
-                If ($y -lt ( $Script:SizeY - 1)) {
-                    If ($Script:labyrinth[$x][$y + 1] -eq 0 ) {
-                        $posDir.Add(@(($Script:labyrinth[$x][$y + 1]), $x, ($y + 1), 2)) #Down
-                    }
+                If (($y -lt ( $Script:SizeY - 1)) -and ($Script:labyrinth[$x][$y + 1] -eq 0 )) {
+                    $posDir.Add(@(($Script:labyrinth[$x][$y + 1]), $x, ($y + 1), 2)) #Down
                 } #down
-                If ($x -gt 0) {
-                    If ($Script:labyrinth[$x - 1][$y] -eq 0) {
-                        $posDir.Add(@(($Script:labyrinth[$x - 1][$y]), ($x - 1), $y, 4)) #left
-                    }
+                If (($x -gt 0) -and ($Script:labyrinth[$x - 1][$y] -eq 0)) {
+                    $posDir.Add(@(($Script:labyrinth[$x - 1][$y]), ($x - 1), $y, 4)) #left
                 }  #left
-                If ($x -lt ( $Script:SizeX - 1)) {
-                    If ($Script:labyrinth[$x + 1][$y] -eq 0) {
-                        $posDir.Add(@(($Script:labyrinth[$x + 1][$y]), ($x + 1), $y, 8))#right
-                    }
+                If (($x -lt ( $Script:SizeX - 1)) -and ($Script:labyrinth[$x + 1][$y] -eq 0)) {
+                    $posDir.Add(@(($Script:labyrinth[$x + 1][$y]), ($x + 1), $y, 8))#right
                 } #right
-                #Random direction
                 $numofposdir = $posdir.Count
-                If ($numofposdir -ne 0) {
+                If ($numofposdir -ne 0) { 
                     $movedetection = $posdir | Where-Object { $_[3] -eq $previousmove }
                     If ($null -eq $movedetection) {
                         $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
                     }
                     Elseif ((Get-Random -Minimum 0 -Maximum $Script:Randomness) -eq 0) {
                         $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
-                    }
+                    } ##Random direction if Randomness low
                     $previousmove = $movedetection[3]
-                    #deur gemaakt
-                    $Script:labyrinth[$x][$y] += $movedetection[3]
+                    $Script:labyrinth[$x][$y] += $movedetection[3]  ## Build door
                     If ($Script:DrawWhileBuilding) {
                         DrawExplorer -x $x -y $y
                     }
                     $x = $movedetection[1]
                     $y = $movedetection[2]
-                    #Deur naar de andere kant!
                     Switch ($movedetection[3]) {
                         1 { $value = 2 }
                         2 { $value = 1 }
                         4 { $value = 8 }
                         8 { $value = 4 }
                     }
-                    $Script:labyrinth[$x][$y] += $value
+                    $Script:labyrinth[$x][$y] += $value                     ## Door to the other side
                     $moved.add("$x,$y")
                     If ($Script:DrawWhileBuilding) {
                         DrawExplorer -x $x -y $y
@@ -754,14 +732,12 @@ Function CreateLabyrinth () {
                     If ($compare -eq 1 -or $compare -eq 2 -or $compare -eq 4 -or $compare -eq 8) {
                         $Script:endpoints.Add(@($x, $y))
                     }
-                    #$removespot = $moved | Where-object {$_[0] -eq $x -and $_[1] -eq $y}
                     $pointer--
-                    #$moved.Remove($removespot)
                     $moved.RemoveAt($moved.indexof("$x,$y"))
                     $nextspot = $moved[(Get-Random -Minimum 0 -Maximum (($moved.count) - 1))] 
                     $x = [int]($nextspot.split(',')[0])
                     $y = [int]($nextspot.split(',')[1])
-                    #Write-host "Step $pointer = Niewe scan op punt $x $y"
+                    #Write-host "Step $pointer = New scan at $x $y"
                 }
             }
         }
@@ -790,24 +766,22 @@ Function CreateLabyrinth () {
                         $posDir.Add(@(($Script:labyrinth[$x + 1][$y]), ($x + 1), $y, 8))#right
                     }
                 } #right
-                #Random direction
                 $numofposdir = $posdir.Count
                 If ($numofposdir -ne 0) {
                     $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
                     $Script:labyrinth[$x][$y] += $movedetection[3]
                     If ($Script:DrawWhileBuilding) {
                         DrawExplorer -x $x -y $y
-                    }
+                    } #Random direction
                     $x = $movedetection[1]
                     $y = $movedetection[2]
-                    #Deur naar de andere kant!
                     Switch ($movedetection[3]) {
                         1 { $value = 2 }
                         2 { $value = 1 }
                         4 { $value = 8 }
                         8 { $value = 4 }
                     }
-                    $Script:labyrinth[$x][$y] += $value
+                    $Script:labyrinth[$x][$y] += $value ## Door to the other side
                     $nextpoint = $Searchpath | Where-Object { $_[0] -eq $x -and $_[1] -eq $y }
                     If ($null -eq $nextpoint) {
                         $nextpoint = $moved | Where-Object { $_[0] -eq $x -and $_[1] -eq $y }
@@ -1277,6 +1251,13 @@ $lblCalc.Add_Click({
             $Script:timerticks = 0
         }
     })
+$cmbCreateAlgoritm.Add_SelectedIndexChanged({
+    If ($cmbCreateAlgoritm.SelectedItem -eq 'Depth-First') {
+        $chkMoreRandomness.Enabled = $true
+    } Else {
+        $chkMoreRandomness.Enabled = $false
+    }
+})
 $timTimer.Add_Tick({
         If ($Script:isSolving) {
             $lblCalc.ForeColor = 'Red'
