@@ -4,7 +4,6 @@ Add-Type -AssemblyName PresentationCore, PresentationFramework
 [System.Windows.Forms.Application]::EnableVisualStyles()
 Clear-Host
 
-
 $Script:Startpoints = @('Random', 'Center', 'Top-Left', 'Top-Right', 'Bottom-Right', 'Bottom-Left')
 $Script:Finishpoints = @('Endpoint Random', 'Endpoint Far', 'Endpoint Last', 'Endpoint First', 'Center', 'Random', 'Top-Left', 'Top-Right', 'Bottom-Right', 'Bottom-Left')
 $Script:CreateAlgoritms = @('Depth-First', 'Prim', 'Wilson', 'Aldous-Broder', 'Sidewinder', 'Eller', 'Rusty Lake', 'Mines of Moria')
@@ -12,9 +11,7 @@ $Script:SolveAlgoritms = @('Radar', 'Follow-Wall', 'Fixed-UDLR', 'Random')
 
 #Global brushes
 $Script:brushw = New-Object Drawing.SolidBrush White
-#$Script:brushbl = New-Object Drawing.SolidBrush Black
 $Script:brushg = New-Object Drawing.SolidBrush Green
-#$Script:brushdb = New-Object Drawing.SolidBrush DarkBlue
 $Script:brushfin = New-Object Drawing.SolidBrush Purple
 $Script:brushbc = New-Object Drawing.SolidBrush Lavender
 $Script:brushr = New-Object Drawing.SolidBrush Tomato
@@ -461,8 +458,7 @@ Function ShowSettings() {
         $sldwidthNum.Enabled = $false
         $sldHeight.Enabled = $false
         $sldHeightNum.Enabled = $false
-    }
-    Else {
+    } Else {
         $sldWidth.Enabled = $true
         $sldwidthNum.Enabled = $true
         $sldHeight.Enabled = $true
@@ -475,8 +471,7 @@ Function ShowSettings() {
     $chkMoreRandomness.Checked = $Script:MoreRandomness
     If ($cmbCreateAlgoritm.SelectedItem -eq 'Depth-First') {
         $chkMoreRandomness.Enabled = $true
-    }
-    Else {
+    } Else {
         $chkMoreRandomness.Enabled = $false
     }
     $sldRandom.Value = $Script:Randomness
@@ -508,8 +503,7 @@ Function SaveSettings {
     If ($Script:MoreRandomness) {
         $Script:RandomFactor = $sldRandom.Value
         $Script:RandomNess = $sldRandom.Value
-    }
-    Else {
+    } Else {
         $Script:RandomNess = $sldRandom.Value
     }
     $Script:Randomness = $sldRandom.Value
@@ -615,8 +609,7 @@ Function CreateLabyrinth () {
                     $movedetection = $posdir | Where-Object { $_[3] -eq $previousmove }
                     If ($null -eq $movedetection) {
                         $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
-                    }
-                    Elseif ((Get-Random -Minimum 0 -Maximum $Script:Randomness) -eq 0) {
+                    } Elseif ((Get-Random -Minimum 0 -Maximum $Script:Randomness) -eq 0) {
                         $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
                     }
                     $previousmove = $movedetection[3]
@@ -639,8 +632,7 @@ Function CreateLabyrinth () {
                         Start-Sleep -Milliseconds $Script:BuildPause
                     }
                     $progress++
-                }
-                ElseIf ($pointer -gt $pointermax) {
+                } ElseIf ($pointer -gt $pointermax) {
                     $pointermax = $pointer + 1
                     $Script:endpoints.Add(@($x, $y))
                     If (($x -lt $Script:SizeX) -and ($x -gt 0) -and ($y -gt 0) -and ($y -lt $Script:SizeY) -and $Script:gaps) {
@@ -653,8 +645,7 @@ Function CreateLabyrinth () {
                     If ($Script:MoreRandomness) {
                         $Script:Randomness = (Get-Random -Minimum 1 -Maximum ($Script:RandomFactor + 1))
                     }
-                }
-                Else {
+                } Else {
                     $pointer--
                     $x = [int](($moved[$pointer]).Split(','))[0]
                     $y = [int](($moved[$pointer]).Split(','))[1]
@@ -684,8 +675,7 @@ Function CreateLabyrinth () {
                     $movedetection = $posdir | Where-Object { $_[3] -eq $previousmove }
                     If ($null -eq $movedetection) {
                         $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
-                    }
-                    Elseif ((Get-Random -Minimum 0 -Maximum $Script:Randomness) -eq 0) {
+                    } Elseif ((Get-Random -Minimum 0 -Maximum $Script:Randomness) -eq 0) {
                         $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
                     } ##Random direction if Randomness low
                     $previousmove = $movedetection[3]
@@ -713,22 +703,18 @@ Function CreateLabyrinth () {
                     If ($Script:Randomness -gt 1) {
                         If ((Get-Random -Minimum 0 -Maximum $Script:Randomness) -ne 0) {
                             $nextspot = $moved[($moved.count) - 1] 
-                        }
-                        Else {
+                        } Else {
                             $nextspot = $moved[(Get-Random -Minimum 0 -Maximum (($moved.count) - 1))] 
                         }
-                    }
-                    Else {
+                    } Else {
                         $nextspot = $moved[(Get-Random -Minimum 0 -Maximum (($moved.count) - 1))] 
                     }
                     $x = [int]($nextspot.split(',')[0])
                     $y = [int]($nextspot.split(',')[1])
                     $progress++
-                }
-                Elseif ($pointer -le 1) {
+                } Elseif ($pointer -le 1) {
                     $pointer--
-                }
-                Else {
+                } Else {
                     $compare = $Script:labyrinth[$x][$y] -band 15
                     If ($compare -eq 1 -or $compare -eq 2 -or $compare -eq 4 -or $compare -eq 8) {
                         $Script:endpoints.Add(@($x, $y))
@@ -750,31 +736,34 @@ Function CreateLabyrinth () {
                 }
             }
             #Add start to set Moved)
-            $moved.add("$x, $y")
+            $moved.add("$x,$y")
             $notmoved.RemoveAt($notmoved.indexof("$x,$y"))
             #get random point from all non-moved
             $index = Get-Random -Minimum 0 -Maximum $notmoved.Count
             $x = [int](($notmoved[$index]).split(',')[0])
             $y = [int](($notmoved[$index]).split(',')[1])
-            While ($pointer -ge 0) {
+            $pointer++
+            [System.Collections.ArrayList]$movedcache = @()
+            #While ($pointer -lt $Script:maxmoves) {
+            While ($notmoved.count -gt 0) {
+                Write-Host "$pointer-" -NoNewline
                 [System.Collections.ArrayList]$posDir = @()
-                If ($null -ne ($moved | Where-Object { $_ -eq "$x,$y-1" })) {
-                    $posDir.Add(@($Script:labyrinth[$x][$y - 1], $x, ($y - 1), 1)) #Up
+                $u = $y - 1; $d = $y + 1; $l = $x - 1; $r = $x + 1
+                If ($null -ne ($moved | Where-Object { $_ -eq "$x,$u" })) {
+                    $posDir.Add(@($Script:labyrinth[$x][$u], $x, $u, 1)) #Up
                 }
-                If ($null -ne ($moved | Where-Object { $_ -eq "$x,$y+1" })) {
-                    $posDir.Add(@($Script:labyrinth[$x][$y + 1], $x, ($y - 1), 1)) #Up
+                If ($null -ne ($moved | Where-Object { $_ -eq "$x,$d" })) {
+                    $posDir.Add(@($Script:labyrinth[$x][$d], $x, $d, 2)) #Down
                 }
-                If ($null -ne ($moved | Where-Object { $_ -eq "$x-1,$y" })) {
-                    $posDir.Add(@($Script:labyrinth[$x - 1][$y], $x, ($y - 1), 1)) #Up
+                If ($null -ne ($moved | Where-Object { $_ -eq "$l,$y" })) {
+                    $posDir.Add(@($Script:labyrinth[$l][$y], $l, $y, 4)) #Left
                 }
-                If ($null -ne ($moved | Where-Object { $_ -eq "$x+1,$y-1" })) {
-                    $posDir.Add(@($Script:labyrinth[$x + 1][$y], $x, ($y - 1), 1)) #Up
+                If ($null -ne ($moved | Where-Object { $_ -eq "$r,$y" })) {
+                    $posDir.Add(@($Script:labyrinth[$r][$y], $r, $y, 8)) #Right
                 }
-                If ($posdir.count -ne 0) {
-                    $x = $movedconnections.split(',')[0]
-                    $y = $movedconnections.split(',')[1]
-                }
-                Else {
+                If ($posdir.count -ge 1) {
+                    $connected = $true
+                } Else {
                     If (($y -gt 0) -and ($Script:labyrinth[$x][$y - 1] -eq 0)) {
                         $posDir.Add(@($Script:labyrinth[$x][$y - 1], $x, ($y - 1), 1)) #Up
                     } #up
@@ -789,18 +778,21 @@ Function CreateLabyrinth () {
                     } #right
                 }
                 $numofposdir = $posdir.Count
-                If ($numofposdir -ne 0) {
-                    $pointer++
+                If ($numofposdir -gt 0) {
                     $movedetection = $posdir | Where-Object { $_[3] -eq $previousmove }
                     If ($null -eq $movedetection) {
                         $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
-                    }
-                    Elseif ((Get-Random -Minimum 0 -Maximum $Script:Randomness) -eq 0) {
+                    } Elseif ((Get-Random -Minimum 0 -Maximum $Script:Randomness) -eq 0) {
                         $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum ($numofposdir))]
                     }
                     $previousmove = $movedetection[3]
+                    $movedcache.add("$x,$y")
+                    $notmoved.RemoveAt($notmoved.indexof("$x,$y"))
                     $Script:labyrinth[$x][$y] += $movedetection[3] ## Build door
-                    If ($Script:DrawWhileBuilding) { DrawExplorer -x $x -y $y }
+                    If ($Script:DrawWhileBuilding) {
+                        DrawExplorer -x $x -y $y
+                        Start-Sleep -Milliseconds $Script:BuildPause
+                    }
                     $x = $movedetection[1]
                     $y = $movedetection[2]
                     Switch ($movedetection[3]) {
@@ -810,13 +802,35 @@ Function CreateLabyrinth () {
                         8 { $value = 4 }
                     }
                     $Script:labyrinth[$x][$y] += $value                     ## Door to the other side
-                    If ($Script:DrawWhileBuilding) { DrawExplorer -x $x -y $y }
-                }
-                Else {
-                    $pointer--
-                    $index = Get-Random -Minimum 0 -Maximum ($notmoved.Count)
-                    $x = [int](($notmoved[$index]).split(',')[0])
-                    $y = [int](($notmoved[$index]).split(',')[1])
+                    If ($connected -and ($notmoved.count -gt 0)) {
+                        $pointer += $movedcache.count
+                        $moved += $movedcache
+                        [System.Collections.ArrayList]$movedcache = @()
+                        $index = Get-Random -Minimum 0 -Maximum ($notmoved.Count)
+                        $x = [int](($notmoved[$index]).split(',')[0])
+                        $y = [int](($notmoved[$index]).split(',')[1])
+                        $connected = $false
+                    } Else {
+                        #$movedcache.add("$x,$y")
+                        #$notmoved.RemoveAt($notmoved.indexof("$x,$y"))
+                    }
+                    If ($Script:DrawWhileBuilding) {
+                        DrawExplorer -x $x -y $y
+                        Start-Sleep -Milliseconds $Script:BuildPause
+                    }
+                } Else {
+                    #$movedcache.add("$x,$y")
+                    $pointer -= $movedcache.count
+                    $notmoved += $movedcache
+                    ForEach ($loc in $movedcache) {
+                        $x = [int]($loc.split(',')[0])
+                        $y = [int]($loc.split(',')[1])
+                        $Script:labyrinth[$x][$y] = 0
+                        If ($Script:DrawWhileBuilding) {
+                            DrawExplorer -x $x -y $y
+                        }
+                    }
+                    [System.Collections.ArrayList]$movedcache = @()
                 }
             }
         }
@@ -882,8 +896,7 @@ Function CreateLabyrinth () {
             'Bottom-Right' { $Script:Finish = @(($Script:SizeX - 1), ($Script:SizeY - 1)) }
             'Bottom-Left' { $Script:Finish = @(0, ($Script:SizeY - 1)) }
         }
-    }
-    Else {
+    } Else {
         $Script:Finish = $Script:Start #Create 1 pixel labyrinth
     }
     $removespot = $Script:endpoints | Where-Object { $_[0] -eq $Script:Finish[0] -and $_[1] -eq $Script:Finish[1] }
@@ -941,8 +954,7 @@ Function SolveLabyrinth {
                         DrawExplorer -x $x -y $y
                         #Start-Sleep -Milliseconds $Script:PlayerPause
                     }
-                }
-                Else {
+                } Else {
                     $previouslocationX = -1
                     $previouslocationY = -1
                 }
@@ -1050,8 +1062,7 @@ Function SolveLabyrinth {
             $moved.Add(@($x, $y))
             $progress = $moved.count - 1
             #Write-host "New route: " -NoNewline
-        }
-        ElseIf ($progress -gt $progressmax) {
+        } ElseIf ($progress -gt $progressmax) {
             $progressmax = $Progress + 1
             $Script:labyrinth[$x][$y] += 240 - ($Script:labyrinth[$x][$y] -band 240)
             If ($Script:DrawWhileSolving) {
@@ -1061,8 +1072,7 @@ Function SolveLabyrinth {
                 DrawExplorer -x $x -y $y
             }
             #Write-host "Deadend at $x $y"
-        }
-        Else {
+        } Else {
             $Progress--
             $Script:moves--
             If (($Script:labyrinth[$x][$y] -band 240) -ne 240) {
@@ -1132,8 +1142,7 @@ Function DrawExplorer {
                 $Script:labyrinth[$x][$y] -= 1024
             }
         }
-    }
-    Else {
+    } Else {
         Switch ($Script:labyrinth[$x][$y]) {
             0 {
                 $Script:Graphics.FillRectangle($Script:brushb, ($x * $scalex) + $offsetx, ($y * $scaleY) + $offsety, $ScaleX, $scaleY)
@@ -1264,8 +1273,7 @@ $lblCalc.Add_Click({
         If ($timTimer.Enabled) {
             $timTimer.Stop()
             $timTimer.Enabled = $false
-        }
-        Else {
+        } Else {
             $timTimer.Enabled = $true
             $timTimer.Start()
             $Script:timerticks = 0
@@ -1274,8 +1282,7 @@ $lblCalc.Add_Click({
 $cmbCreateAlgoritm.Add_SelectedIndexChanged({
         If ($cmbCreateAlgoritm.SelectedItem -eq 'Depth-First') {
             $chkMoreRandomness.Enabled = $true
-        }
-        Else {
+        } Else {
             $chkMoreRandomness.Enabled = $false
         }
     })
@@ -1283,8 +1290,7 @@ $timTimer.Add_Tick({
         If ($Script:isSolving) {
             $lblCalc.ForeColor = 'Red'
             $lblCalc.Text = $Script:moves
-        }
-        Else {
+        } Else {
             Switch ($Script:timerticks) {
                 0 { $lblCalc.ForeColor = 'Black'; $lblCalc.Text = $Script:CreateAlgoritm }
                 1 { $lblCalc.ForeColor = 'Black'; $lblCalc.Text = $Script:SolveAlgoritm }
