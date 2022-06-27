@@ -746,7 +746,6 @@ Function CreateLabyrinth () {
             [System.Collections.ArrayList]$movedcache = @()
             #While ($pointer -lt $Script:maxmoves) {
             While ($notmoved.count -gt 0) {
-                Write-Host "$pointer-" -NoNewline
                 [System.Collections.ArrayList]$posDir = @()
                 $u = $y - 1; $d = $y + 1; $l = $x - 1; $r = $x + 1
                 If ($null -ne ($moved | Where-Object { $_ -eq "$x,$u" })) {
@@ -803,6 +802,7 @@ Function CreateLabyrinth () {
                     }
                     $Script:labyrinth[$x][$y] += $value                     ## Door to the other side
                     If ($connected -and ($notmoved.count -gt 0)) {
+                        $script:Endpoints.add(@([int]($movedcache[0]).split(',')[0],[int]($movedcache[0]).split(',')[1]))
                         $pointer += $movedcache.count
                         $moved += $movedcache
                         [System.Collections.ArrayList]$movedcache = @()
@@ -819,7 +819,7 @@ Function CreateLabyrinth () {
                         Start-Sleep -Milliseconds $Script:BuildPause
                     }
                 } Else {
-                    #$movedcache.add("$x,$y")
+                    $movedcache.add("$x,$y")
                     $pointer -= $movedcache.count
                     $notmoved += $movedcache
                     ForEach ($loc in $movedcache) {
@@ -831,6 +831,9 @@ Function CreateLabyrinth () {
                         }
                     }
                     [System.Collections.ArrayList]$movedcache = @()
+                    If ($Script:DrawWhileBuilding) {
+                        DrawExplorer -x $x -y $y
+                    }
                 }
             }
         }
