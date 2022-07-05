@@ -836,6 +836,7 @@ Function CreateLabyrinth () {
                         DrawExplorer -x $x -y $y
                     }
                 }
+                $prgCalc.Value = ($global:maxmoves -($notmoved.count))
             }
         }
         'Eller-ip' {
