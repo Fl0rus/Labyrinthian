@@ -802,7 +802,6 @@ Function CreateLabyrinth () {
                     }
                     $Script:labyrinth[$x][$y] += $value                     ## Door to the other side
                     If ($connected -and ($notmoved.count -gt 0)) {
-                        $script:Endpoints.add(@([int]($movedcache[0]).split(',')[0],[int]($movedcache[0]).split(',')[1]))
                         $pointer += $movedcache.count
                         $moved += $movedcache
                         [System.Collections.ArrayList]$movedcache = @()
@@ -820,6 +819,8 @@ Function CreateLabyrinth () {
                     }
                 } Else {
                     $movedcache.add("$x,$y")
+                    $notmoved.RemoveAt($notmoved.indexof("$x,$y"))
+                    $script:Endpoints.add(@([int]($movedcache[0]).split(',')[0],[int]($movedcache[0]).split(',')[1]))
                     $pointer -= $movedcache.count
                     $notmoved += $movedcache
                     ForEach ($loc in $movedcache) {
