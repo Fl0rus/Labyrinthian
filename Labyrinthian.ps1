@@ -22,10 +22,10 @@ $RegKeyPath = 'HKCU:\Software\Labyrinthian'
 #Init Reg key
 If (Test-Path $RegKeyPath) {
     $ErrorActionPreference = 'SilentlyContinue' #Error Supressing because of bug in Get-ItemPoropertyValue; see https://github.com/PowerShell/PowerShell/issues/5906
-    #Get-settings
+    #Get-settings from registry
     $Script:FrmSizeX = Get-ItemPropertyValue -Path $RegKeyPath -Name FRMSizeX
     $Script:FrmSizeY = Get-ItemPropertyValue -Path $RegKeyPath -Name FRMSizeY
-    #global settings Create
+    #Global settings Create
     $Script:SizeX = Get-ItemPropertyValue -Path $RegKeyPath -Name SizeX
     $Script:SizeY = Get-ItemPropertyValue -Path $RegKeyPath -Name SizeY
     $Script:DrawWhileBuilding = Get-ItemPropertyValue -Path $RegKeyPath -Name DrawWhileBuilding
@@ -46,8 +46,7 @@ If (Test-Path $RegKeyPath) {
     $ErrorActionPreference = 'Continue'
 } 
 #init settings
-#Global settings Create
-#Initial labyrint width & Height
+#Global settings Create defaults
 If ($null -eq $Script:FrmSizeX) { $Script:FrmSizeX = 1280 }
 If ($null -eq $Script:FrmSizeY) { $Script:FrmSizeY = 720 }
 If ($null -eq $Script:SizeX) { $Script:SizeX = 30 }
