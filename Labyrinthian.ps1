@@ -6,7 +6,7 @@ Clear-Host
 
 $Script:Startpoints = @('Random', 'Center', 'Top-Left', 'Top-Right', 'Bottom-Right', 'Bottom-Left')
 $Script:Finishpoints = @('Endpoint Random', 'Endpoint Far', 'Endpoint Last', 'Endpoint First', 'Center', 'Random', 'Top-Left', 'Top-Right', 'Bottom-Right', 'Bottom-Left')
-$Script:CreateAlgoritms = @('Depth-First', 'Prim', 'Wilson', 'Aldous-Broder', 'Sidewinder', 'Eller', 'Rusty Lake', 'Mines of Moria')
+$Script:CreateAlgoritms = @('Depth-First', 'Prim', 'Wilson', 'Aldous-Broder', 'Sidewinder', 'Eller', 'Rusty Lake', 'Mines of Moria','SlitherLink')
 $Script:SolveAlgoritms = @('Radar', 'Follow-Wall', 'Fixed-UDLR', 'Random')
 
 #Global brushes
@@ -835,12 +835,72 @@ Function CreateLabyrinth () {
                         DrawExplorer -x $x -y $y
                     }
                 }
-                $prgCalc.Value = ($global:maxmoves -($notmoved.count))
+                $prgCalc.Value = ($global:maxmoves - ($notmoved.count))
             }
         }
         'Eller-ip' {
             While ($Workingrow -le $Script:SizeY) {
                 $WorkingRow++
+            }
+        }
+        'SlitherLink' {
+            [System.Collections.ArrayList]$notmoved = @()
+            For ($xx = 0; $xx -lt $Script:SizeX; $xx++) {
+                For ($yy = 0; $yy -lt $Script:SizeY; $yy++) {
+                    $notmoved.Add("$xx,$yy")
+                }
+            }
+            #Add start to set Moved)
+            $notmoved.RemoveAt($notmoved.indexof("$x,$y"))
+            While ($notmoved.count -gt 0) {
+                #get random point from all non-moved
+                $pointer++
+                [System.Collections.ArrayList]$posDir = @()
+                If (($y -gt 0) -and ($Script:labyrinth[$x][$y - 1] -eq 0)) {
+                    $posDir.Add(@($Script:labyrinth[$x][$y - 1], $x, ($y - 1), 1)) #Up
+                } #up
+                If (($y -lt ( $Script:SizeY - 1)) -and ($Script:labyrinth[$x][$y + 1] -eq 0 )) {
+                    $posDir.Add(@(($Script:labyrinth[$x][$y + 1]), $x, ($y + 1), 2)) #Down
+                } #down
+                If (($x -gt 0) -and ($Script:labyrinth[$x - 1][$y] -eq 0)) {
+                    $posDir.Add(@(($Script:labyrinth[$x - 1][$y]), ($x - 1), $y, 4)) #left
+                }  #left
+                If (($x -lt ( $Script:SizeX - 1)) -and ($Script:labyrinth[$x + 1][$y] -eq 0)) {
+                    $posDir.Add(@(($Script:labyrinth[$x + 1][$y]), ($x + 1), $y, 8))#right
+                } #right
+                $numofposdir = $posdir.Count
+                If ($numofposdir -eq 0) {
+                    $posDir.Add(@($Script:labyrinth[$x][$y - 1], $x, ($y - 1), 1)) #Up
+                    $posDir.Add(@(($Script:labyrinth[$x][$y + 1]), $x, ($y + 1), 2)) #Down
+                    $posDir.Add(@(($Script:labyrinth[$x - 1][$y]), ($x - 1), $y, 4)) #left
+                    $posDir.Add(@(($Script:labyrinth[$x + 1][$y]), ($x + 1), $y, 8))#right
+                }
+                If ($numofposdir -eq 4) {
+                    [System.Collections.ArrayList]$posDir = @()
+                    $posdir.Add(@($posDir[(Get-Random -Minimum 0 -Maximum $numofposdir)]))
+                } 
+                ForEach ($movedetection in $posDir) {
+                    $Script:labyrinth[$x][$y] += $movedetection[3]  ## Build door
+                    If ($Script:DrawWhileBuilding) {
+                        DrawExplorer -x $x -y $y
+                    }
+                    $xx = $movedetection[1]
+                    $yy = $movedetection[2]
+                    Switch ($movedetection[3]) {
+                        1 { $value = 2 }
+                        2 { $value = 1 }
+                        4 { $value = 8 }
+                        8 { $value = 4 }
+                    }
+                    $Script:labyrinth[$xx][$yy] += $value                     ## Door to the other side
+                    If ($Script:DrawWhileBuilding) {
+                        DrawExplorer -x $xx -y $yy
+                    }
+                }    
+                $index = Get-Random -Minimum 0 -Maximum $notmoved.Count
+                $x = [int](($notmoved[$index]).split(',')[0])
+                $y = [int](($notmoved[$index]).split(',')[1])
+                $notmoved.RemoveAt($notmoved.indexof("$x,$y"))
             }
         }
         default {
