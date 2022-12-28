@@ -845,7 +845,7 @@ Function CreateLabyrinth () {
         }
         'SlitherLink' {
             [System.Collections.ArrayList]$notmoved = @()
-            For ($xx = 0; $xx -lt $Script:SizeX; $xx++) {
+            For ($xx = 0; $xx -lt ($Script:SizeX); $xx++) {
                 For ($yy = 0; $yy -lt $Script:SizeY; $yy++) {
                     $notmoved.Add("$xx,$yy")
                 }
@@ -856,28 +856,43 @@ Function CreateLabyrinth () {
                 #get random point from all non-moved
                 $pointer++
                 [System.Collections.ArrayList]$posDir = @()
+                [System.Collections.ArrayList]$imposDir = @()
                 If (($y -gt 0) -and ($Script:labyrinth[$x][$y - 1] -eq 0)) {
                     $posDir.Add(@($Script:labyrinth[$x][$y - 1], $x, ($y - 1), 1)) #Up
+                } Else {
+                    $imposDir.Add(@($Script:labyrinth[$x][$y - 1], $x, ($y - 1), 1)) #Up
                 } #up
                 If (($y -lt ( $Script:SizeY - 1)) -and ($Script:labyrinth[$x][$y + 1] -eq 0 )) {
                     $posDir.Add(@(($Script:labyrinth[$x][$y + 1]), $x, ($y + 1), 2)) #Down
-                } #down
+                } Else {
+                    $imposDir.Add(@(($Script:labyrinth[$x][$y + 1]), $x, ($y + 1), 2)) #Down
+                }#down
                 If (($x -gt 0) -and ($Script:labyrinth[$x - 1][$y] -eq 0)) {
                     $posDir.Add(@(($Script:labyrinth[$x - 1][$y]), ($x - 1), $y, 4)) #left
+                } Else {
+                    $imposDir.Add(@(($Script:labyrinth[$x - 1][$y]), ($x - 1), $y, 4)) #left
                 }  #left
-                If (($x -lt ( $Script:SizeX - 1)) -and ($Script:labyrinth[$x + 1][$y] -eq 0)) {
-                    $posDir.Add(@(($Script:labyrinth[$x + 1][$y]), ($x + 1), $y, 8))#right
-                } #right
+                If ($x -lt ($Script:SizeX - 1)) {
+                    If ($Script:labyrinth[$x + 1][$y] -eq 0) {
+                        $posDir.Add(@(($Script:labyrinth[$x + 1][$y]), ($x + 1), $y, 8))#right
+                    } Else {
+                        $imposDir.Add(@(($Script:labyrinth[$x + 1][$y]), ($x + 1), $y, 8))#right
+                    }
+                }#right
                 $numofposdir = $posdir.Count
+                $numofimposdir = $imposdir.Count
                 If ($numofposdir -eq 0) {
-                    $posDir.Add(@($Script:labyrinth[$x][$y - 1], $x, ($y - 1), 1)) #Up
-                    $posDir.Add(@(($Script:labyrinth[$x][$y + 1]), $x, ($y + 1), 2)) #Down
-                    $posDir.Add(@(($Script:labyrinth[$x - 1][$y]), ($x - 1), $y, 4)) #left
-                    $posDir.Add(@(($Script:labyrinth[$x + 1][$y]), ($x + 1), $y, 8))#right
+                    $Script:endpoints.Add(@($x, $y))
+                    If (($Script:labyrinth[$x][$y] -band 1) -ne 1 -and ($y -gt 0)) {$posDir.Add(@(($Script:labyrinth[$x][$y - 1]), $x, ($y - 1), 1))} #Up
+                    If (($Script:labyrinth[$x][$y] -band 2) -ne 2 -and ($y -lt ( $Script:SizeY - 1))) {$posDir.Add(@(($Script:labyrinth[$x][$y + 1]), $x, ($y + 1), 2))} #Down
+                    If (($Script:labyrinth[$x][$y] -band 4) -ne 4 -and ($x -gt 0)) {$posDir.Add(@(($Script:labyrinth[$x - 1][$y]), ($x - 1), $y, 4))} #left
+                    If (($Script:labyrinth[$x][$y] -band 8) -ne 8 -and ($x -lt ( $Script:SizeX - 1))) {$posDir.Add(@(($Script:labyrinth[$x + 1][$y]), ($x + 1), $y, 8))} #right
+                    $numofposdir = $posdir.Count 
                 }
-                If ($numofposdir -eq 4) {
+                If ($numofposdir -ge 3) {
+                    $movedetection = $posDir[(Get-Random -Minimum 0 -Maximum $numofposdir)]
                     [System.Collections.ArrayList]$posDir = @()
-                    $posdir.Add(@($posDir[(Get-Random -Minimum 0 -Maximum $numofposdir)]))
+                    $posdir.Add(@($movedetection))
                 } 
                 ForEach ($movedetection in $posDir) {
                     $Script:labyrinth[$x][$y] += $movedetection[3]  ## Build door
@@ -892,6 +907,7 @@ Function CreateLabyrinth () {
                         4 { $value = 8 }
                         8 { $value = 4 }
                     }
+                    #Write-Host "$xx - $yy"
                     $Script:labyrinth[$xx][$yy] += $value                     ## Door to the other side
                     If ($Script:DrawWhileBuilding) {
                         DrawExplorer -x $xx -y $yy

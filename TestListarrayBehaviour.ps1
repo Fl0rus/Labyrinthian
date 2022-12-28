@@ -9,11 +9,11 @@
 
 Write-host $x.count
 
-$i=$x | ? {$_[0] -eq 2 -and $_[1] -eq 3}
+$i=$x | Where-Object {$_[0] -eq 2 -and $_[1] -eq 3}
 $x.Remove($i)
 Write-host $i
 
-$i=$x | ? {$_[0] -eq 2 -and $_[1] -eq 3}
+$i=$x | Where-Object {$_[0] -eq 2 -and $_[1] -eq 3}
 Write-host $i
 $x.Remove($i)
 
