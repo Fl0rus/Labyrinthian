@@ -575,8 +575,9 @@ Function CreateLabyrinth () {
             Write-Host "$Script:startpoint not in set"
         }
     }
+    #Set start point for creating
     $Script:Start = @($x, $y)
-    $Script:labyrinth[$x][$y] = 256 #start
+    $Script:labyrinth[$x][$y] = 0 #start
     $pointer = 0
     $progress = 0
     $pointermax = 0
@@ -942,6 +943,11 @@ Function CreateLabyrinth () {
             Write-Host "$Script:CreateAlgoritm not yet implemented"
         }
     }
+    If ($Script:DrawWhileBuilding) { DrawExplorer -x $script:start[0] -y $script:start[1] }
+    #Random Startpoint
+    #Make start and endpoint dynamic from clicking
+    $Script:Start = @((Get-Random -Minimum 0 -Maximum ($Script:SizeX - 1)), (Get-Random -Minimum 0 -Maximum ($Script:SizeY - 1)))
+    $Script:labyrinth[$Script:Start[0]][$Script:Start[1]] += 256 #start
     #End point placing
     If ($Script:endpoints.count -gt 0) {
         Switch ($Script:Finishpoint) {
@@ -982,7 +988,10 @@ Function CreateLabyrinth () {
     $removespot = $Script:endpoints | Where-Object { $_[0] -eq $Script:Finish[0] -and $_[1] -eq $Script:Finish[1] }
     $Script:endpoints.Remove($removespot)
     $Script:labyrinth[$Script:Finish[0]][$Script:Finish[1]] = 512 #finish
-    If ($Script:DrawWhileBuilding) { DrawExplorer -x $Script:Finish[0] -y $Script:Finish[1] }
+    If ($Script:DrawWhileBuilding) {
+        DrawExplorer -x $Script:Finish[0] -y $Script:Finish[1] 
+        DrawExplorer -x $Script:Start[0] -y $Script:Start[1]
+    }
     $Script:FirstSolve = $true
     $Script:isCreating = $false
 }
