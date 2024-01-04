@@ -4,6 +4,7 @@ Add-Type -AssemblyName PresentationCore, PresentationFramework
 [System.Windows.Forms.Application]::EnableVisualStyles()
 Clear-Host
 
+$Script:CreationPoints = @('Random', 'Center', 'Top-Left', 'Top-Right', 'Bottom-Right', 'Bottom-Left')
 $Script:Startpoints = @('Random', 'Center', 'Top-Left', 'Top-Right', 'Bottom-Right', 'Bottom-Left')
 $Script:Finishpoints = @('Endpoint Random', 'Endpoint Far', 'Endpoint Last', 'Endpoint First', 'Center', 'Random', 'Top-Left', 'Top-Right', 'Bottom-Right', 'Bottom-Left')
 $Script:CreateAlgoritms = @('Depth-First', 'Prim', 'Wilson', 'Aldous-Broder', 'Sidewinder', 'Eller', 'Rusty Lake', 'Mines of Moria','SlitherLink')
@@ -67,7 +68,7 @@ If ($null -eq $Script:ClearLabBeforeSolving) { $Script:ClearLabBeforeSolving = $
 
 $Script:SolveAlgoritm = $Script:SolveAlgoritms[$Script:SolveAlgoritmIndex] 
 $Script:CreateAlgoritm = $Script:CreateAlgoritms[$Script:CreateAlgoritmIndex]
-$Script:Startpoint = $Script:Startpoints[$Script:StartpointIndex]
+$Script:Startpoint = $Script:CreationPoints[$Script:StartpointIndex]
 $Script:Finishpoint = $Script:Finishpoints[$Script:FinishpointIndex]
 
 $Script:RandomFactor = $Script:Randomness
@@ -158,47 +159,26 @@ For ($i = 0; $i -lt $Script:CreateAlgoritms.count; $i++) {
 }
 $cmbCreateAlgoritm.SelectedIndex = $Script:CreateAlgoritmIndex
 
-$lblStartpoint = New-Object System.Windows.Forms.Label
-$lblStartpoint.AutoSize = $true
-$lblStartpoint.width = 70
-$lblStartpoint.height = 30
-$lblStartpoint.TextAlign = 16 #MiddleLeft
-$lblStartpoint.location = New-Object System.Drawing.Point(10, 70)
-$lblStartpoint.Text = 'Start Point'
+$lblCreationPoint = New-Object System.Windows.Forms.Label
+$lblCreationPoint.AutoSize = $true
+$lblCreationPoint.width = 70
+$lblCreationPoint.height = 30
+$lblCreationPoint.TextAlign = 16 #MiddleLeft
+$lblCreationPoint.location = New-Object System.Drawing.Point(10, 70)
+$lblCreationPoint.Text = 'Creation Point'
 
-$cmbStartpoint = New-Object System.Windows.Forms.ComboBox
-$cmbStartpoint.Width = 125
-$cmbStartpoint.Height = 30
-$cmbStartpoint.AutoSize = $true
-$cmbStartpoint.DropDownStyle = 2
-$cmbStartpoint.AutoCompleteMode = 0
-$cmbStartpoint.location = New-Object System.Drawing.Point(100, 70)
-For ($i = 0; $i -lt $Script:Startpoints.count; $i++) {
-    [void]$cmbStartpoint.items.Add($Script:Startpoints[$i])
-    If ($Script:Startpoints[$i] -eq $Script:startpoint) { $Script:StartpointIndex = $i }
+$cmbCreationPoint = New-Object System.Windows.Forms.ComboBox
+$cmbCreationPoint.Width = 125
+$cmbCreationPoint.Height = 30
+$cmbCreationPoint.AutoSize = $true
+$cmbCreationPoint.DropDownStyle = 2
+$cmbCreationPoint.AutoCompleteMode = 0
+$cmbCreationPoint.location = New-Object System.Drawing.Point(100, 70)
+For ($i = 0; $i -lt $Script:CreationPoints.count; $i++) {
+    [void]$cmbCreationPoint.items.Add($Script:CreationPoints[$i])
+    If ($Script:CreationPoints[$i] -eq $Script:startpoint) { $Script:StartpointIndex = $i }
 }
-$cmbStartpoint.SelectedIndex = $Script:StartpointIndex
-
-$lblFinishpoint = New-Object System.Windows.Forms.Label
-$lblFinishpoint.AutoSize = $true
-$lblFinishpoint.width = 70
-$lblFinishpoint.height = 30
-$lblFinishpoint.TextAlign = 16 #MiddleLeft
-$lblFinishpoint.location = New-Object System.Drawing.Point(10, 100)
-$lblFinishpoint.Text = 'Finish Point'
-
-$cmbFinishpoint = New-Object System.Windows.Forms.ComboBox
-$cmbFinishpoint.Width = 125
-$cmbFinishpoint.Height = 30
-$cmbFinishpoint.AutoSize = $true
-$cmbFinishpoint.DropDownStyle = 2
-$cmbFinishpoint.AutoCompleteMode = 0
-$cmbFinishpoint.location = New-Object System.Drawing.Point(100, 100)
-For ($i = 0; $i -lt $Script:Finishpoints.count; $i++) {
-    [void]$cmbFinishpoint.items.Add($Script:Finishpoints[$i])
-    If ($Script:Finishpoints[$i] -eq $Script:Finishpoint) { $Script:FinishpointIndex = $i }
-}
-$cmbFinishpoint.SelectedIndex = $Script:FinishpointIndex
+$cmbCreationPoint.SelectedIndex = $Script:StartpointIndex
 
 $sldWidth = New-Object System.Windows.Forms.Trackbar
 $sldwidth.AutoSize = $true
@@ -321,7 +301,7 @@ $chkDrawSol.Location = New-Object System.Drawing.Point(10, 10)
 $lblSolveSpeed = New-Object System.Windows.Forms.Label
 $lblSolveSpeed.width = 50
 $lblSolveSpeed.height = 30
-$lblSolveSpeed.location = New-Object System.Drawing.Point(10, 40)
+$lblSolveSpeed.location = New-Object System.Drawing.Point(10, 85)
 $lblSolveSpeed.Text = 'Speed'
 
 $sldSolveSpeed = New-Object System.Windows.Forms.Trackbar
@@ -329,7 +309,7 @@ $sldSolveSpeed.AutoSize = $true
 $sldSolveSpeed.Text = 'Speed'
 $sldSolveSpeed.width = 200
 $sldSolveSpeed.Height = 30
-$sldSolveSpeed.location = New-Object System.Drawing.Point(60, 40)
+$sldSolveSpeed.location = New-Object System.Drawing.Point(60, 85)
 $sldSolveSpeed.Maximum = 250
 $sldSolveSpeed.Minimum = 0
 $sldSolveSpeed.TickFrequency = 10
@@ -339,7 +319,7 @@ $sldSolveSpeed.Orientation = 0
 $sldSolveSpeedNum = New-Object System.Windows.Forms.NumericUpDown
 $sldSolveSpeedNum.width = 45
 $sldSolveSpeedNum.Height = 25
-$sldSolveSpeedNum.Location = New-Object System.Drawing.Point(270, 40)
+$sldSolveSpeedNum.Location = New-Object System.Drawing.Point(270, 85)
 $sldSolveSpeedNum.Maximum = 250
 $sldSolveSpeedNum.Minimum = 0
 
@@ -348,7 +328,7 @@ $lblSolveAlgoritm.AutoSize = $true
 $lblSolveAlgoritm.width = 70
 $lblSolveAlgoritm.height = 30
 $lblSolveAlgoritm.TextAlign = 16 #MiddleLeft
-$lblSolveAlgoritm.location = New-Object System.Drawing.Point(10, 85)
+$lblSolveAlgoritm.location = New-Object System.Drawing.Point(10, 40)
 $lblSolveAlgoritm.Text = 'Solve Algoritm'
 
 $cmbSolveAlgoritm = New-Object System.Windows.Forms.ComboBox
@@ -357,12 +337,54 @@ $cmbSolveAlgoritm.Height = 30
 $cmbSolveAlgoritm.AutoSize = $true
 $cmbSolveAlgoritm.DropDownStyle = 2
 $cmbSolveAlgoritm.AutoCompleteMode = 0
-$cmbSolveAlgoritm.location = New-Object System.Drawing.Point(95, 85)
+$cmbSolveAlgoritm.location = New-Object System.Drawing.Point(100, 40)
 For ($i = 0; $i -lt $Script:SolveAlgoritms.count; $i++) {
     [void]$cmbSolveAlgoritm.items.Add($Script:SolveAlgoritms[$i])
     If ($Script:SolveAlgoritms[$i] -eq $Script:SolveAlgoritm) { $Script:SolveAlgoritmIndex = $i }
 }
 $cmbSolveAlgoritm.SelectedIndex = $Script:SolveAlgoritmIndex
+
+$lblStartPoint = New-Object System.Windows.Forms.Label
+$lblStartPoint.AutoSize = $true
+$lblStartPoint.width = 70
+$lblStartPoint.height = 30
+$lblStartPoint.TextAlign = 16 #MiddleLeft
+$lblStartPoint.location = New-Object System.Drawing.Point(10,130)
+$lblStartPoint.Text = 'Start Point'
+
+$cmbStartPoint = New-Object System.Windows.Forms.ComboBox
+$cmbStartPoint.Width = 125
+$cmbStartPoint.Height = 30
+$cmbStartPoint.AutoSize = $true
+$cmbStartPoint.DropDownStyle = 2
+$cmbStartPoint.AutoCompleteMode = 0
+$cmbStartPoint.location = New-Object System.Drawing.Point(100, 130)
+For ($i = 0; $i -lt $Script:StartPoints.count; $i++) {
+    [void]$cmbStartPoint.items.Add($Script:StartPoints[$i])
+    If ($Script:StartPoints[$i] -eq $Script:startpoint) { $Script:StartpointIndex = $i }
+}
+$cmbStartPoint.SelectedIndex = $Script:StartpointIndex
+
+$lblFinishpoint = New-Object System.Windows.Forms.Label
+$lblFinishpoint.AutoSize = $true
+$lblFinishpoint.width = 70
+$lblFinishpoint.height = 30
+$lblFinishpoint.TextAlign = 16 #MiddleLeft
+$lblFinishpoint.location = New-Object System.Drawing.Point(10, 155)
+$lblFinishpoint.Text = 'Finish Point'
+
+$cmbFinishpoint = New-Object System.Windows.Forms.ComboBox
+$cmbFinishpoint.Width = 125
+$cmbFinishpoint.Height = 30
+$cmbFinishpoint.AutoSize = $true
+$cmbFinishpoint.DropDownStyle = 2
+$cmbFinishpoint.AutoCompleteMode = 0
+$cmbFinishpoint.location = New-Object System.Drawing.Point(100, 155)
+For ($i = 0; $i -lt $Script:Finishpoints.count; $i++) {
+    [void]$cmbFinishpoint.items.Add($Script:Finishpoints[$i])
+    If ($Script:Finishpoints[$i] -eq $Script:Finishpoint) { $Script:FinishpointIndex = $i }
+}
+$cmbFinishpoint.SelectedIndex = $Script:FinishpointIndex
 
 $chkDeadEndFill = New-Object System.Windows.Forms.Checkbox
 $chkDeadEndFill.AutoSize = $true
@@ -370,7 +392,7 @@ $chkDeadEndFill.Checked = $Script:DeadEndFilling
 $chkDeadEndFill.Width = 25
 $chkDeadEndFill.Height = 25
 $chkDeadEndFill.Text = 'Dead End Filling'
-$chkDeadEndFill.Location = New-Object System.Drawing.Point(10, 110)
+$chkDeadEndFill.Location = New-Object System.Drawing.Point(10, 190)
 
 $btnOk = New-Object System.Windows.Forms.Button
 $btnOk.Height = 30
@@ -408,8 +430,7 @@ $tabpageSolve = $tabSettings.Controls[1]
 $tabCreatecontrols = @(
     $chkDrawLab,
     $lblCreateAlgoritm, $cmbCreateAlgoritm,
-    $lblStartpoint, $cmbStartpoint,
-    $lblFinishpoint, $cmbFinishpoint,
+    $lblCreationPoint, $cmbCreationPoint,
     $sldWidth, $sldwidthNum, $lblWidth,
     $sldHeight, $sldHeightNum, $lblHeight
     $sldRandom, $sldRandomNum, $lblRandom, $chkMoreRandomness,
@@ -418,6 +439,8 @@ $tabCreatecontrols = @(
 $tabSolvecontrols = @(
     $chkDrawSol,
     $sldSolveSpeed, $sldSolveSpeedNum, $lblSolveSpeed,
+    $lblStartPoint, $cmbStartPoint,
+    $lblFinishpoint, $cmbFinishpoint,
     $lblSolveAlgoritm, $cmbSolveAlgoritm,
     $chkDeadEndFill
 )
@@ -477,7 +500,7 @@ Function ShowSettings() {
     $sldRandomNum.Value = $Script:Randomness
     $cmbCreateAlgoritm.SelectedIndex = $Script:CreateAlgoritmIndex
     $cmbSolveAlgoritm.SelectedIndex = $Script:SolveAlgoritmIndex
-    $cmbStartpoint.SelectedIndex = $Script:StartpointIndex
+    $cmbCreationPoint.SelectedIndex = $Script:StartpointIndex
     $cmbFinishpoint.SelectedIndex = $Script:FinishpointIndex 
     $FrmLabyrinthianSettings.StartPosition = 'CenterParent'
     $FrmLabyrinthianSettings.Update()
@@ -514,8 +537,8 @@ Function SaveSettings {
         $Script:CreateAlgoritm = $cmbCreateAlgoritm.SelectedItem 
         $Script:CreateAlgoritmIndex = $cmbCreateAlgoritm.SelectedIndex 
     }
-    $Script:Startpoint = $cmbStartpoint.SelectedItem
-    $Script:StartpointIndex = $cmbStartpoint.SelectedIndex
+    $Script:Startpoint = $cmbCreationPoint.SelectedItem
+    $Script:StartpointIndex = $cmbCreationPoint.SelectedIndex
     $Script:Finishpoint = $cmbFinishpoint.SelectedItem
     $Script:FinishpointIndex = $cmbFinishpoint.SelectedIndex
 
